@@ -5,14 +5,15 @@
  * Strictly adheres to CLAD Channel-A UI architecture:
  * - All UIKit primitives (Frame, Button, ProgressBar) and Component.Text live exclusively in this *UI.ts module.
  * - Exposes typed Event<T> emitters for user actions and renderSnapshot() for state updates.
- * - Includes high-contrast dark backing pills and dynamic component status descriptions for SPECS 27.
+ * - Includes X-Ray Cutaway toggle, Before/After Comparison toggle, LOTO Safety Interlock banner,
+ *   Trainee Competency Scorecard, and high-contrast dark backing pills for SPECS 27.
  */
 
 import Event, { PublicApi } from "SpectaclesInteractionKit.lspkg/Utils/Event"
 import { Button } from "SpectaclesUIKit.lspkg/Scripts/Components/Button/Button"
 import { Frame } from "SpectaclesUIKit.lspkg/Scripts/Components/Frame/Frame"
 import { ProgressBar } from "SpectaclesUIKit.lspkg/Scripts/Components/ProgressBar/ProgressBar"
-import { FaultSeverity, FieldFixUISnapshot, HotspotId } from "./FieldFixState"
+import { FaultSeverity, FieldFixUISnapshot, HOTSPOT_CATALOG, HotspotId } from "./FieldFixState"
 
 interface ButtonHandle {
   obj: SceneObject
@@ -39,6 +40,12 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
 
   private onResetRequestedEvent = new Event<void>()
   public readonly onResetRequested: PublicApi<void> = this.onResetRequestedEvent.publicApi()
+
+  private onToggleXrayEvent = new Event<void>()
+  public readonly onToggleXray: PublicApi<void> = this.onToggleXrayEvent.publicApi()
+
+  private onToggleComparisonEvent = new Event<void>()
+  public readonly onToggleComparison: PublicApi<void> = this.onToggleComparisonEvent.publicApi()
 
   private frame: Frame | null = null
   private contentRoot: SceneObject | null = null
@@ -74,6 +81,8 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
   private btnPrev: ButtonHandle | null = null
   private btnNext: ButtonHandle | null = null
   private btnReset: ButtonHandle | null = null
+  private btnToggleXray: ButtonHandle | null = null
+  private btnToggleComparison: ButtonHandle | null = null
 
   public onAwake(): void {
     const frame = this.sceneObject.createComponent(Frame.getTypeName()) as Frame
@@ -84,7 +93,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.frame = frame
 
     frame.onInitialized.add(() => {
-      frame.innerSize = new vec2(28, 39)
+      frame.innerSize = new vec2(28, 43.2)
       frame.padding = new vec2(0.8, 0.8)
       frame.syncScaleBaseline()
 
@@ -121,7 +130,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
   private buildPanelContents(): void {
     const root = global.scene.createSceneObject("DiagnosticPanelContent")
     root.setParent(this.sceneObject)
-    root.getTransform().setLocalPosition(new vec3(0, 0, 0.8))
+    root.getTransform().setLocalPosition(new vec3(0, 1.35, 0.8))
     this.contentRoot = root
 
     // 1. Top App Title & Status Badge
@@ -301,13 +310,18 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnPrimaryAction = this.createUIButton(
       root,
       "BtnPrimaryAction",
-      new vec3(0, -12.3, 0.75),
-      new vec3(25.0, 3.6, 1.0),
+      new vec3(0, -12.1, 0.75),
+      new vec3(25.0, 3.4, 1.0),
       "SCAN EQUIPMENT TELEMETRY",
       37,
       "Primary",
       () => {
-        if (this.pendingSnapshot && this.pendingSnapshot.phase === "READY_TO_SCAN") {
+        if (!this.pendingSnapshot) return
+        if (this.pendingSnapshot.phase === "SCANNING") {
+          // Ignore duplicate pinches while the 1.2s laser scan sweep is in progress
+          return
+        }
+        if (this.pendingSnapshot.phase === "READY_TO_SCAN") {
           this.onScanRequestedEvent.invoke()
         } else {
           this.onConfirmStepEvent.invoke()
@@ -315,14 +329,14 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       }
     )
 
-    // 8. Bottom Navigation Row: Prev Step | Next Step | Reset Unit
+    // 8. Navigation Row: Prev Step | Next Step | Reset Unit
     this.btnPrev = this.createUIButton(
       root,
       "BtnPrevStep",
-      new vec3(-8.6, -16.3, 1.15),
-      new vec3(8.0, 3.4, 1.2),
+      new vec3(-8.6, -15.8, 1.15),
+      new vec3(8.0, 2.6, 1.1),
       "< PREV STEP",
-      30,
+      29,
       "PrimaryNeutral",
       () => {
         this.onPrevStepEvent.invoke()
@@ -332,10 +346,10 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnNext = this.createUIButton(
       root,
       "BtnNextStep",
-      new vec3(0.0, -16.3, 1.15),
-      new vec3(8.0, 3.4, 1.2),
+      new vec3(0.0, -15.8, 1.15),
+      new vec3(8.0, 2.6, 1.1),
       "NEXT STEP >",
-      30,
+      29,
       "PrimaryNeutral",
       () => {
         this.onNextStepEvent.invoke()
@@ -345,13 +359,40 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnReset = this.createUIButton(
       root,
       "BtnResetUnit",
-      new vec3(8.6, -16.3, 1.15),
-      new vec3(8.0, 3.4, 1.2),
+      new vec3(8.6, -15.8, 1.15),
+      new vec3(8.0, 2.6, 1.1),
       "RESET UNIT",
-      30,
+      29,
       "Secondary",
       () => {
         this.onResetRequestedEvent.invoke()
+      }
+    )
+
+    // 9. Advanced Spatial Utility Row: 3D X-Ray Cutaway & Before/After State Comparison
+    this.btnToggleXray = this.createUIButton(
+      root,
+      "BtnToggleXray",
+      new vec3(-6.5, -19.9, 1.15),
+      new vec3(12.2, 2.6, 1.1),
+      "X-RAY CUTAWAY",
+      28,
+      "Secondary",
+      () => {
+        this.onToggleXrayEvent.invoke()
+      }
+    )
+
+    this.btnToggleComparison = this.createUIButton(
+      root,
+      "BtnToggleComparison",
+      new vec3(6.5, -19.9, 1.15),
+      new vec3(12.2, 2.6, 1.1),
+      "COMPARE BEFORE/AFTER",
+      28,
+      "Secondary",
+      () => {
+        this.onToggleComparisonEvent.invoke()
       }
     )
   }
@@ -530,13 +571,19 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
 
     // 2. Live Telemetry Bar
     if (this.telemetryBarText) {
-      const flowStatus = snapshot.phase === "COMPLETED" ? "NOMINAL" : "SIMULATED"
+      const flowStatus = snapshot.comparisonFaultPreview
+        ? "FAULT SNAPSHOT"
+        : snapshot.phase === "COMPLETED"
+          ? "NOMINAL"
+          : "SIMULATED"
       this.telemetryBarText.text =
         `SIM TELEMETRY: ${snapshot.systemTempC}C  |  ${snapshot.systemPressurePsi} PSI  |  FLOW: ${snapshot.coolantFlowPct}% (${flowStatus})`
       this.telemetryBarText.textFill.color =
-        snapshot.phase === "COMPLETED"
+        !snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED"
           ? new vec4(0.32, 0.98, 0.58, 1.0)
-          : new vec4(0.48, 0.96, 1.0, 1.0)
+          : snapshot.comparisonFaultPreview
+            ? new vec4(1.0, 0.65, 0.25, 1.0)
+            : new vec4(0.48, 0.96, 1.0, 1.0)
     }
 
     // 3. Hotspot Button Active Highlight Labels
@@ -547,12 +594,16 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     // 4. Selected Component Details
     const comp = snapshot.selectedComponent
     const compRepaired =
-      snapshot.phase === "COMPLETED" ||
-      (comp.id === "valve" && snapshot.completedSteps[0] && snapshot.completedSteps[3]) ||
-      (comp.id === "regulator" && snapshot.completedSteps[1]) ||
-      (comp.id === "relay" && snapshot.completedSteps[2])
+      !snapshot.comparisonFaultPreview &&
+      (snapshot.phase === "COMPLETED" ||
+        (comp.id === "valve" && snapshot.completedSteps[0] && snapshot.completedSteps[3]) ||
+        (comp.id === "regulator" && snapshot.completedSteps[1]) ||
+        (comp.id === "relay" && snapshot.completedSteps[2]))
     const valveLockedOutMidRepair =
-      comp.id === "valve" && snapshot.completedSteps[0] && !snapshot.completedSteps[3]
+      !snapshot.comparisonFaultPreview &&
+      comp.id === "valve" &&
+      snapshot.completedSteps[0] &&
+      !snapshot.completedSteps[3]
 
     if (this.componentTitleText) {
       const statusText = compRepaired
@@ -560,7 +611,8 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         : valveLockedOutMidRepair
           ? "LOTO ISOLATED: INTAKE LOCKED (0% FLOW)"
           : comp.faultStatusLabel
-      this.componentTitleText.text = `[${comp.subsystemCode}] ${statusText}`
+      const xrayTag = snapshot.xrayMode ? " [X-RAY]" : ""
+      this.componentTitleText.text = `[${comp.subsystemCode}] ${statusText}${xrayTag}`
       this.componentTitleText.textFill.color = compRepaired
         ? new vec4(0.32, 0.98, 0.58, 1.0)
         : valveLockedOutMidRepair
@@ -569,7 +621,10 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     }
 
     if (this.rootCauseText) {
-      if (snapshot.phase === "READY_TO_SCAN") {
+      if (snapshot.xrayMode) {
+        this.rootCauseText.text = comp.xrayInternalSummary
+        this.rootCauseText.textFill.color = new vec4(0.55, 0.98, 1.0, 1.0)
+      } else if (snapshot.phase === "READY_TO_SCAN") {
         this.rootCauseText.text =
           "Training Standby: Pinch [SCAN EQUIPMENT TELEMETRY] or any 3D hotspot on Unit #04 to localize simulated faults."
         this.rootCauseText.textFill.color = new vec4(0.90, 0.96, 1.0, 1.0)
@@ -585,11 +640,14 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       }
     }
 
-    // 5. Guided Step Instructions
+    // 5. Guided Step Instructions & Smart Training Feedback / Scorecard
     const step = snapshot.currentStep
     if (this.stepHeaderText) {
-      if (snapshot.phase === "COMPLETED") {
-        this.stepHeaderText.text = "REPAIR COMPLETE: ALL 4 STEPS VERIFIED"
+      if (snapshot.interlockFlashHotspot) {
+        this.stepHeaderText.text = `LOTO INTERLOCK -> REDIRECTED TO STEP ${step.stepNumber}/4`
+        this.stepHeaderText.textFill.color = new vec4(1.0, 0.42, 0.42, 1.0)
+      } else if (snapshot.phase === "COMPLETED") {
+        this.stepHeaderText.text = `REPAIR COMPLETE: ${snapshot.traineeGrade} (${snapshot.trainingScorePct}%)`
         this.stepHeaderText.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
       } else {
         const doneTag = snapshot.isCurrentStepDone ? " [DONE]" : ""
@@ -602,16 +660,21 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
 
     if (this.stepInstructionText) {
       if (snapshot.phase === "COMPLETED") {
-        this.stepInstructionText.text =
-          "Cryo-Coolant Pump & Relay Unit #04 operating at nominal parameters (42C, 45 PSI, 100% Flow)."
+        this.stepInstructionText.text = snapshot.comparisonFaultPreview
+          ? "COMPARISON ACTIVE: Viewing initial fault telemetry (118C, 142 PSI, 18% Flow). Pinch COMPARE to restore nominal view."
+          : "Cryo-Coolant Pump & Relay Unit #04 operating at nominal parameters (42C, 45 PSI, 100% Flow)."
       } else {
         this.stepInstructionText.text = `${step.actionInstruction} (Pinch 3D target or EXECUTE button)`
       }
     }
 
     if (this.safetyWarningText) {
-      if (snapshot.phase === "COMPLETED") {
-        this.safetyWarningText.text = "SERVICE LOGGED: Lockout tags cleared. Pinch RESET UNIT to replay scenario."
+      if (snapshot.interlockFlashHotspot) {
+        this.safetyWarningText.text = snapshot.activeFeedbackText
+        this.safetyWarningText.textFill.color = new vec4(1.0, 0.44, 0.44, 1.0)
+      } else if (snapshot.phase === "COMPLETED") {
+        this.safetyWarningText.text =
+          `TRAINING SCORECARD: ${snapshot.trainingScorePct}% (${snapshot.traineeGrade}) | LOTO Violations: ${snapshot.safetyViolations} | Pinch [COMPARE] to review.`
         this.safetyWarningText.textFill.color = new vec4(0.55, 0.98, 0.75, 1.0)
       } else {
         this.safetyWarningText.text = `${step.safetyWarning} (${step.verificationMetric})`
@@ -649,10 +712,10 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         this.btnPrimaryAction.label.text = "SCANNING SUBSYSTEMS..."
         this.btnPrimaryAction.label.textFill.color = new vec4(1.0, 0.88, 0.35, 1.0)
       } else if (snapshot.phase === "COMPLETED") {
-        this.btnPrimaryAction.label.text = "SYSTEM VERIFIED NOMINAL (100%)"
+        this.btnPrimaryAction.label.text = `VERIFIED NOMINAL (${snapshot.trainingScorePct}% SCORE)`
         this.btnPrimaryAction.label.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
       } else if (snapshot.isCurrentStepDone) {
-        this.btnPrimaryAction.label.text = `STEP ${step.stepNumber} VERIFIED (RE-CONFIRM)`
+        this.btnPrimaryAction.label.text = `STEP ${step.stepNumber} VERIFIED (ADVANCE)`
         this.btnPrimaryAction.label.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
       } else {
         this.btnPrimaryAction.label.text = step.confirmButtonLabel
@@ -660,7 +723,24 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       }
     }
 
-    // 8. Update Floating 3D Spatial Equipment Callouts
+    // 8. Row 9 Utility Button Labels (X-Ray & Before/After Comparison)
+    if (this.btnToggleXray) {
+      this.btnToggleXray.label.text = snapshot.xrayMode ? "[ X-RAY: ON ]" : "X-RAY CUTAWAY"
+      this.btnToggleXray.label.textFill.color = snapshot.xrayMode
+        ? new vec4(0.45, 0.98, 1.0, 1.0)
+        : new vec4(0.90, 0.95, 1.0, 1.0)
+    }
+
+    if (this.btnToggleComparison) {
+      this.btnToggleComparison.label.text = snapshot.comparisonFaultPreview
+        ? "[ COMPARE: FAULT ]"
+        : "COMPARE BEFORE/AFTER"
+      this.btnToggleComparison.label.textFill.color = snapshot.comparisonFaultPreview
+        ? new vec4(1.0, 0.72, 0.28, 1.0)
+        : new vec4(0.90, 0.95, 1.0, 1.0)
+    }
+
+    // 9. Update Floating 3D Spatial Equipment Callouts
     this.updateSpatialCallouts(snapshot)
   }
 
@@ -670,24 +750,32 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     const amber = new vec4(1.0, 0.82, 0.30, 1.0)
     const red = new vec4(1.0, 0.40, 0.40, 1.0)
 
+    const targetCode = HOTSPOT_CATALOG[snapshot.currentStep.targetHotspot].subsystemCode
+
     if (this.calloutHeaderText) {
-      if (snapshot.phase === "COMPLETED") {
+      if (snapshot.comparisonFaultPreview) {
+        this.calloutHeaderText.text = "UNIT #04: BEFORE REPAIR (FAULT VIEW)"
+        this.calloutHeaderText.textFill.color = red
+      } else if (snapshot.interlockFlashHotspot) {
+        this.calloutHeaderText.text = `LOTO BLOCKED: PINCH [${targetCode}] FIRST!`
+        this.calloutHeaderText.textFill.color = red
+      } else if (snapshot.phase === "COMPLETED") {
         this.calloutHeaderText.text = "UNIT #04: ALL SUBSYSTEMS NOMINAL"
         this.calloutHeaderText.textFill.color = green
       } else if (snapshot.phase === "READY_TO_SCAN") {
         this.calloutHeaderText.text = "UNIT #04: READY FOR SPATIAL SCAN"
         this.calloutHeaderText.textFill.color = cyan
       } else {
-        this.calloutHeaderText.text = `UNIT #04: STEP ${snapshot.currentStep.stepNumber}/4 -> PINCH [${snapshot.selectedComponent.subsystemCode}]`
+        this.calloutHeaderText.text = `UNIT #04: STEP ${snapshot.currentStep.stepNumber}/4 -> PINCH [${targetCode}]`
         this.calloutHeaderText.textFill.color = amber
       }
     }
 
     if (this.calloutValveText) {
-      if (snapshot.completedSteps[3] || snapshot.phase === "COMPLETED") {
+      if (!snapshot.comparisonFaultPreview && (snapshot.completedSteps[3] || snapshot.phase === "COMPLETED")) {
         this.calloutValveText.text = "CV-101: 100% FLOW [OK]"
         this.calloutValveText.textFill.color = green
-      } else if (snapshot.completedSteps[0]) {
+      } else if (!snapshot.comparisonFaultPreview && snapshot.completedSteps[0]) {
         this.calloutValveText.text = "CV-101: LOTO LOCKED (0%)"
         this.calloutValveText.textFill.color = cyan
       } else {
@@ -697,7 +785,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     }
 
     if (this.calloutRegulatorText) {
-      if (snapshot.completedSteps[1] || snapshot.phase === "COMPLETED") {
+      if (!snapshot.comparisonFaultPreview && (snapshot.completedSteps[1] || snapshot.phase === "COMPLETED")) {
         this.calloutRegulatorText.text = `PR-204: ${snapshot.systemPressurePsi} PSI [REGULATED]`
         this.calloutRegulatorText.textFill.color = green
       } else {
@@ -707,7 +795,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     }
 
     if (this.calloutRelayText) {
-      if (snapshot.completedSteps[2] || snapshot.phase === "COMPLETED") {
+      if (!snapshot.comparisonFaultPreview && (snapshot.completedSteps[2] || snapshot.phase === "COMPLETED")) {
         this.calloutRelayText.text = `TR-309: ${snapshot.systemTempC}C [COOLED]`
         this.calloutRelayText.textFill.color = green
       } else {

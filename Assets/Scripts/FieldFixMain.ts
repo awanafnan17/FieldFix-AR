@@ -126,6 +126,12 @@ export class FieldFixMain extends BaseScriptComponent {
       this.diagnosticUI.onResetRequested.add(() => {
         this.resetExperience()
       })
+      this.diagnosticUI.onToggleXray.add(() => {
+        this.toggleXrayMode()
+      })
+      this.diagnosticUI.onToggleComparison.add(() => {
+        this.toggleComparisonMode()
+      })
     }
 
     if (this.equipmentMesh) {
@@ -138,7 +144,7 @@ export class FieldFixMain extends BaseScriptComponent {
   /**
    * Handles a direct 3D pinch on one of the equipment's SIK Interactable hotspots.
    * - If the pinched 3D component is the active repair step's target during DIAGNOSING/REPAIRING,
-   *   pinching the 3D component directly executes that physical repair step!
+   *   pinching the 3D component directly executes that physical repair step (or triggers LOTO Safety Interlock if out-of-order)!
    * - Otherwise, it selects that component for inspection.
    */
   public handle3DHotspotPinch(id: HotspotId): FieldFixUISnapshot {
@@ -158,6 +164,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public triggerScan(immediate: boolean = false): FieldFixUISnapshot {
+    if (this.stateMachine.phase === "SCANNING" && !immediate) {
+      return this.stateMachine.getSnapshot()
+    }
     this.audioController?.playScan()
     if (immediate || this.scanDurationSec <= 0.05) {
       this.scanCountdown = -1
@@ -211,16 +220,44 @@ export class FieldFixMain extends BaseScriptComponent {
   public confirmCurrentStep(): FieldFixUISnapshot {
     this.scanCountdown = -1
     const result = this.stateMachine.confirmCurrentStep()
+    if (result.interlockBlocked) {
+      this.audioController?.playAlert()
+      this.syncAll(result.snapshot)
+      print(
+        `[FieldFixAR] SafetyInterlockBlocked | violations=${result.snapshot.safetyViolations} | redirectedStep=${result.snapshot.currentStep.stepNumber}/4 | target=${result.snapshot.selectedHotspot}`
+      )
+      return result.snapshot
+    }
     if (result.newlyCompletedAll) {
       this.audioController?.playComplete()
-    } else {
+    } else if (result.stepExecuted >= 0) {
       this.audioController?.playStepConfirm()
+    } else {
+      this.audioController?.playClick()
     }
     this.syncAll(result.snapshot)
     print(
-      `[FieldFixAR] StepConfirmed | executedStep=${result.stepExecuted + 1} | completed=${result.snapshot.completedCount}/${result.snapshot.totalSteps} | phase=${result.snapshot.phase} | temp=${result.snapshot.systemTempC}C | psi=${result.snapshot.systemPressurePsi} | flow=${result.snapshot.coolantFlowPct}%`
+      `[FieldFixAR] StepConfirmed | executedStep=${result.stepExecuted + 1} | completed=${result.snapshot.completedCount}/${result.snapshot.totalSteps} | phase=${result.snapshot.phase} | temp=${result.snapshot.systemTempC}C | psi=${result.snapshot.systemPressurePsi} | flow=${result.snapshot.coolantFlowPct}% | score=${result.snapshot.trainingScorePct}%`
     )
     return result.snapshot
+  }
+
+  public toggleXrayMode(): FieldFixUISnapshot {
+    this.audioController?.playClick()
+    const snap = this.stateMachine.toggleXrayMode()
+    this.syncAll(snap)
+    print(`[FieldFixAR] XrayToggled | xrayMode=${snap.xrayMode} | hotspot=${snap.selectedHotspot}`)
+    return snap
+  }
+
+  public toggleComparisonMode(): FieldFixUISnapshot {
+    this.audioController?.playClick()
+    const snap = this.stateMachine.toggleComparisonMode()
+    this.syncAll(snap)
+    print(
+      `[FieldFixAR] ComparisonToggled | faultPreview=${snap.comparisonFaultPreview} | temp=${snap.systemTempC}C | psi=${snap.systemPressurePsi}`
+    )
+    return snap
   }
 
   public resetExperience(): FieldFixUISnapshot {

@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
-Builds the reframed 104-second (1m 44s) 1080p 30fps demonstration video for FieldFix AR
-(`devpost/FieldFix-AR-Demo.mp4`) directly from continuous 60fps Lens Studio 5.24.1 window
-recordings captured via macOS WindowServer (`screencapture -V ... -l <LensStudioWindowID>`).
+Builds the competition-grade 120.0-second (2m 00s) 1080p 30fps narrated demonstration video
+for FieldFix AR (`devpost/FieldFix-AR-Demo.mp4`) directly from continuous 60fps Lens Studio 5.24.1
+window recordings captured via macOS WindowServer (`screencapture -V ... -l <LensStudioWindowID>`).
 
-Design & Framing Principles:
+Upgrades in Campaign v3:
 - 75–85% of visual attention is dedicated to the enlarged, tightly cropped live SPECS 27 AR
-  experience (`1380x844` hero viewport) so the 3D machine, valve wheel, LOTO safety clasp,
-  gauge needle, thermal relay core, floating spatial callouts, SIK pinch cursor, and
-  SpectaclesUIKit checklist are crisp and readable at normal 1080p playback.
-- The full Lens Studio 5.24.1 Editor window is shown only briefly in the 80–95s chapter to
-  demonstrate step navigation, unit reset, automated LEAF testing, and the Closed Loop
-  Agentic Development (CLAD) + Lens Studio MCP workflow.
-- Concise, plain-English captions and right-hand visual summary cards explain the problem,
-  solution, and mechanical state changes clearly for both non-technical and technical judges.
-- Synchronized procedural spatial audio track mixed from `Assets/GeneratedSFX/*.wav`.
+  experience (`1380x844` hero viewport showing all 9 UIKit rows including X-Ray Cutaway and
+  Before/After Comparison) so the 3D machine, asymmetric yellow-tipped valve lever, 3D LOTO clasp,
+  exploded X-Ray internal sub-assemblies, gauge needle, thermal relay core, floating spatial callouts,
+  SIK pinch cursor, and SpectaclesUIKit checklist are crisp and readable at normal 1080p playback.
+- Zero scan-rewind glitch in 0:00–0:12 (pure READY_TO_SCAN standby) and zero reset bleed in
+  Before/After Comparison.
+- Free local macOS voiceover narration (`/usr/bin/say -v Samantha -r 184`) synthesized per chapter
+  and sidechain-ducked over the continuous spatial ambient pad + 5 procedural 44.1 kHz WAV SFX cues.
 """
 
 import os
@@ -40,14 +39,14 @@ CHAPTERS = [
         "id": "ch01_opening_concept",
         "nav_idx": 0,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 0.0,
-        "src_dur": 8.0,
-        "duration": 10.0,
-        "step_badge": "0:00 – 0:10   |   1. THE PROBLEM, SOLUTION & SPATIAL AR CONCEPT",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_full_journey.mov"),
+        "ss": 0.2,
+        "src_dur": 4.8,
+        "duration": 12.0,
+        "step_badge": "0:00 – 0:12   |   1. THE PROBLEM, SOLUTION & SPATIAL AR CONCEPT",
         "title": "FieldFix AR — Hands-Free Industrial Maintenance Training Simulation",
         "caption_1": "Technicians need both hands free during complex repairs. FieldFix AR anchors a 3D equipment twin and guided checklist in space.",
-        "caption_2": "Unlike flat screen overlays, trainees pinch 3D equipment components directly to practice fault diagnosis and safe repair.",
+        "caption_2": "Unlike flat screen overlays, trainees pinch 3D equipment components directly to practice fault diagnosis, LOTO safety, and repair.",
         "card_tag": "WHY FIELDFIX AR?",
         "card_title": "Hands-Free Spatial\nMaintenance Training",
         "card_items": [
@@ -58,181 +57,242 @@ CHAPTERS = [
         ],
         "card_footer": "SIMULATED TELEMETRY: 116°C  |  140 PSI  |  18% FLOW",
         "accent": (72, 225, 255),
-        "sfx_events": [(0.5, "ButtonClick.wav", 0.55), (3.8, "ScanSweep.wav", 0.80)],
+        "voiceover": (
+            "FieldFix A R is a hands-free spatial maintenance training simulation for Snap SPECS. "
+            "Instead of holding paper manuals, technicians interact directly with a three-D equipment twin and floating repair checklist."
+        ),
+        "sfx_events": [(0.6, "ButtonClick.wav", 0.50)],
     },
     {
-        "id": "ch02_diagnostic_scan",
+        "id": "ch02_scan_and_xray",
         "nav_idx": 1,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 2.4,
-        "src_dur": 10.5,
-        "duration": 15.0,
-        "step_badge": "0:10 – 0:25   |   2. SIMULATED DIAGNOSTIC SCAN & FAULT VISUALIZATION",
-        "title": "3D Laser Scan Sweep Pinpoints Simulated Faults & Highlights Target Parts",
-        "caption_1": "A right-hand pinch on [SCAN EQUIPMENT TELEMETRY] sweeps a 3D laser ring across the pump assembly to localize simulated faults.",
-        "caption_2": "Color-coded spatial badges highlight three issues—restricted valve flow, high pressure, and relay overheat—and guide Step 1.",
-        "card_tag": "DIAGNOSTIC SCAN",
-        "card_title": "3 Simulated Faults\nLocalized in 3D Space",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_full_journey.mov"),
+        "ss": 5.5,
+        "src_dur": 26.0,
+        "duration": 16.0,
+        "step_badge": "0:12 – 0:28   |   2. DIAGNOSTIC SCAN & 3D X-RAY CUTAWAY INSPECTION",
+        "title": "3D Laser Scan Pinpoints Faults & X-Ray Cutaway Explodes Internal Parts",
+        "caption_1": "Pinching [SCAN EQUIPMENT TELEMETRY] sweeps a 3D laser ring across Unit #04 to localize three simulated subsystem faults.",
+        "caption_2": "Pinching [X-RAY CUTAWAY] explodes the internal cryo-ball seal, relief spring diaphragm, and copper stator coil in 3D space.",
+        "card_tag": "SCAN + 3D X-RAY MODE",
+        "card_title": "3 Faults Localized &\nInternal Cutaway View",
         "card_items": [
-            ("CV-101 INTAKE VALVE", "WARN: Flow restricted to 18% due to simulated intake cavitation.", (255, 200, 75)),
-            ("PR-204 REGULATOR", "FAULT: 142 PSI over-pressure spike trapped in bypass manifold.", (255, 165, 65)),
-            ("TR-309 RELAY CORE", "CRITICAL: Core overheated at 118°C; thermal plunger tripped.", (255, 95, 95)),
-            ("3D TARGET CHEVRON", "Bobs directly above CV-101 to guide the trainee to Step 1/4.", (72, 225, 255)),
+            ("CV-101 INTAKE VALVE", "X-RAY: Internal cryo-ball seal & venturi exposed (18% restricted flow).", (255, 200, 75)),
+            ("PR-204 REGULATOR", "X-RAY: Internal relief spring & diaphragm spool exposed (142 PSI spike).", (255, 165, 65)),
+            ("TR-309 RELAY CORE", "X-RAY: Copper stator coil & tripped plunger exposed (118°C overheat).", (255, 95, 95)),
+            ("3D TARGET CHEVRON", "Bobs above CV-101 to guide the trainee to Step 1/4 (LOTO Lockout).", (72, 225, 255)),
         ],
-        "card_footer": "ACTIVE TARGET: [CV-101] LOCKOUT ISOLATION VALVE",
+        "card_footer": "X-RAY CUTAWAY: INTERNAL SUB-ASSEMBLIES EXPLODED",
         "accent": (255, 205, 70),
-        "sfx_events": [(1.0, "ScanSweep.wav", 0.80), (4.5, "FaultAlert.wav", 0.65), (9.8, "ButtonClick.wav", 0.70)],
+        "voiceover": (
+            "Pinching Scan Equipment Telemetry sweeps a three-D laser ring across the cryo-pump to pinpoint three simulated faults. "
+            "Toggling X-Ray Cutaway explodes the internal valve seal, regulator spring, and copper stator coil in three-D space."
+        ),
+        "sfx_events": [(0.8, "ScanSweep.wav", 0.80), (2.4, "FaultAlert.wav", 0.65), (5.2, "ButtonClick.wav", 0.65), (9.8, "ButtonClick.wav", 0.60)],
     },
     {
-        "id": "ch03a_valve_and_regulator",
+        "id": "ch03_safety_interlock",
         "nav_idx": 2,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 12.8,
-        "src_dur": 12.0,
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_full_journey.mov"),
+        "ss": 31.8,
+        "src_dur": 6.0,
+        "duration": 14.0,
+        "step_badge": "0:28 – 0:42   |   3. INDUSTRIAL LOTO SAFETY INTERLOCK & SMART REDIRECTION",
+        "title": "Out-of-Order Repair Attempts Trigger LOTO Safety Interlock & Auto-Redirect",
+        "caption_1": "Attempting to unseat the overheated TR-309 Relay Core (Step 3) before isolating CV-101 triggers an immediate Safety Interlock.",
+        "caption_2": "The 3D relay halo flashes red, an audio alert sounds, and the system automatically redirects the trainee back to Step 1/4 [CV-101].",
+        "card_tag": "ACTIVE SAFETY TRAINING",
+        "card_title": "Sequential LOTO\nSafety Interlock",
+        "card_items": [
+            ("UNSAFE ACTION BLOCKED", "Blocks unseating TR-309 while 142 PSI pressure is still trapped.", (255, 95, 95)),
+            ("3D HAZARD FLASH", "Relay halo flashes crimson and plays a spatial hazard alert cue.", (255, 165, 65)),
+            ("AUTO-REDIRECTION", "3D target chevron & checklist redirect automatically to Step 1 CV-101.", (72, 225, 255)),
+            ("COMPETENCY SCORING", "Tracks safety violations to grade trainee LOTO discipline at completion.", (85, 245, 155)),
+        ],
+        "card_footer": "LOTO BLOCKED: COMPLETE STEP 1 [CV-101] FIRST!",
+        "accent": (255, 95, 95),
+        "voiceover": (
+            "If a trainee attempts to unseat the overheated relay core before isolating the intake valve, "
+            "the Lockout-Tagout Safety Interlock blocks the unsafe action, flashes a red hazard alert, and redirects focus to Step One."
+        ),
+        "sfx_events": [(1.5, "ButtonClick.wav", 0.65), (6.2, "FaultAlert.wav", 0.85)],
+    },
+    {
+        "id": "ch04_steps1_and_2",
+        "nav_idx": 2,
+        "mode": "hero_ar",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_full_journey.mov"),
+        "ss": 38.0,
+        "src_dur": 7.0,
         "duration": 15.0,
-        "step_badge": "0:25 – 0:40   |   3A. REAL 3D COMPONENT INTERACTIONS: VALVE LOTO & REGULATOR PURGE",
-        "title": "Direct 3D Hand Pinches Rotate the Valve Wheel, Snap LOTO & Sweep the Gauge",
-        "caption_1": "Step 1 (Isolate): Pinching the 3D CV-101 valve rotates the wheel 90°, snaps on a red lockout clasp, and stops pipe flow rings.",
-        "caption_2": "Step 2 (Depressurize): Pinching the 3D PR-204 regulator purges pressure—the gauge needle sweeps from red (142 PSI) to green (38 PSI).",
+        "step_badge": "0:42 – 0:57   |   4. REAL 3D COMPONENT REPAIRS: VALVE LOTO & REGULATOR PURGE",
+        "title": "Direct 3D Hand Pinches Rotate the Valve Lever, Snap LOTO & Sweep the Gauge",
+        "caption_1": "Step 1 (Isolate): Pinching 3D CV-101 rotates the yellow lever 90° clockwise, snaps on the red LOTO clasp, and stops pipe flow.",
+        "caption_2": "Step 2 (Depressurize): Pinching 3D PR-204 purges trapped pressure—the gauge needle sweeps from red (142 PSI) to green (38 PSI).",
         "card_tag": "3D MECHANICAL RESPONSE",
         "card_title": "Steps 1 & 2: Visible\nPhysical State Changes",
         "card_items": [
-            ("STEP 1: CV-101 VALVE", "3D wheel rotates 90° clockwise; red LOTO safety clasp snaps on.", (72, 225, 255)),
+            ("STEP 1: CV-101 VALVE", "Yellow lever rotates -90° clockwise; red 3D LOTO safety clasp snaps on.", (72, 225, 255)),
             ("PIPE FLOW HALTS", "Animated cryo-coolant rings pause at 0% flow to confirm isolation.", (255, 200, 75)),
             ("STEP 2: PR-204 GAUGE", "3D gauge needle sweeps from red left (142 PSI) to green right (38 PSI).", (85, 245, 155)),
             ("SIMULATED COOLING", "Bleeding trapped vapor drops simulated manifold temp to 82°C.", (190, 230, 255)),
         ],
         "card_footer": "PROGRESS: 2 / 4 STEPS VERIFIED  ([1:LOTO OK] [2:PURGE OK])",
         "accent": (255, 165, 60),
-        "sfx_events": [(1.8, "RepairStepConfirm.wav", 0.85), (6.5, "ButtonClick.wav", 0.65), (10.2, "RepairStepConfirm.wav", 0.85)],
+        "voiceover": (
+            "In Step One, pinching the three-D isolation valve rotates the yellow lever ninety degrees clockwise, snaps on a red Lockout clasp, and halts pipe flow. "
+            "In Step Two, pinching the three-D regulator bleeds trapped pressure from one-forty-two P-S-I down to thirty-eight P-S-I."
+        ),
+        "sfx_events": [(1.8, "RepairStepConfirm.wav", 0.85), (8.2, "RepairStepConfirm.wav", 0.85)],
     },
     {
-        "id": "ch03b_relay_reseat",
+        "id": "ch05_step3_relay",
         "nav_idx": 2,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 24.5,
-        "src_dur": 8.5,
-        "duration": 15.0,
-        "step_badge": "0:40 – 0:55   |   3B. REAL 3D COMPONENT INTERACTIONS: THERMAL RELAY CORE RESEAT",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_part2.mov"),
+        "ss": 3.0,
+        "src_dur": 6.0,
+        "duration": 13.0,
+        "step_badge": "0:57 – 1:10   |   5. REAL 3D COMPONENT REPAIRS: THERMAL RELAY CORE RESEAT",
         "title": "Pinching the 3D Thermal Relay Retracts the Plunger & Cools the Core to 46°C",
-        "caption_1": "Step 3 (Reseat Relay): Pinching the glowing 3D TR-309 relay core retracts the tripped plunger into its housing and cools the unit.",
+        "caption_1": "Step 3 (Reseat Relay): Pinching the glowing 3D TR-309 relay core retracts the tripped plunger into its collar and cools the unit.",
         "caption_2": "The spatial badge updates to [COOLED 46°C] and the 3D target chevron moves back to CV-101 for final re-pressurization.",
         "card_tag": "3D MECHANICAL RESPONSE",
         "card_title": "Step 3: Thermal Relay\nCore Latch Reseated",
         "card_items": [
             ("STEP 3: TR-309 RELAY", "Pinching the 3D relay core physically retracts the raised plunger.", (85, 245, 155)),
             ("THERMAL RECOVERY", "Simulated core temperature drops from 118°C critical to 46°C.", (72, 225, 255)),
-            ("DYNAMIC LOTO STATUS", "Selecting CV-101 shows 'LOTO ISOLATED: INTAKE LOCKED (0% FLOW)'.", (255, 210, 85)),
+            ("DYNAMIC LOTO STATUS", "CV-101 displays 'LOTO ISOLATED: INTAKE LOCKED (0% FLOW)'.", (255, 210, 85)),
             ("NEXT TARGET", "3D chevron guides trainee back to CV-101 for Step 4/4.", (190, 230, 255)),
         ],
         "card_footer": "PROGRESS: 3 / 4 STEPS VERIFIED  ([3:RESEAT OK])",
         "accent": (72, 225, 255),
-        "sfx_events": [(4.2, "RepairStepConfirm.wav", 0.85), (9.5, "ButtonClick.wav", 0.65)],
+        "voiceover": (
+            "With pressure safely bled, pinching the three-D thermal relay core in Step Three physically retracts the tripped plunger into its cooling sleeve, "
+            "dropping core temperature to forty-six Celsius."
+        ),
+        "sfx_events": [(2.6, "RepairStepConfirm.wav", 0.85)],
     },
     {
-        "id": "ch04a_step4_completion",
+        "id": "ch06_step4_and_scorecard",
         "nav_idx": 3,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 31.5,
-        "src_dur": 8.5,
-        "duration": 13.0,
-        "step_badge": "0:55 – 1:08   |   4A. GUIDED REPAIR COMPLETION & TELEMETRY RECOVERY (4/4 DONE)",
-        "title": "Step 4 Restores 100% Simulated Coolant Flow & Verifies Nominal Operation",
-        "caption_1": "Step 4 (Restore Flow): Pinching the 3D CV-101 valve removes the lockout clasp, rotates the wheel open, and restores 100% flow.",
-        "caption_2": "All 3D halos, overhead beacon, pipe flow rings, and checklist items turn emerald green (42°C | 45 PSI | 100% FLOW | 4/4 DONE).",
-        "card_tag": "REPAIR COMPLETE",
-        "card_title": "Simulated Telemetry:\nBefore vs. After Repair",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_part2.mov"),
+        "ss": 9.0,
+        "src_dur": 6.0,
+        "duration": 14.0,
+        "step_badge": "1:10 – 1:24   |   6. STEP 4 COMPLETION, NOMINAL TELEMETRY & TRAINEE SCORECARD",
+        "title": "Step 4 Restores 100% Flow, Verifies Nominal Operation & Grades Competency",
+        "caption_1": "Step 4 (Restore Flow): Pinching 3D CV-101 clears the LOTO clasp, rotates the yellow lever +90° open, and restores 100% flow.",
+        "caption_2": "All 3D halos, beacon, and flow rings turn emerald green (42°C | 45 PSI | 100% FLOW) and award the Trainee Competency Scorecard.",
+        "card_tag": "REPAIR COMPLETE + SCORECARD",
+        "card_title": "Verified Nominal State\n& Trainee Scorecard",
         "card_items": [
             ("TEMPERATURE", "118°C Overheat  -->  42°C Nominal (Relay Core Cooled)", (85, 245, 155)),
             ("MANIFOLD PRESSURE", "142 PSI Spike   -->  45 PSI Regulated (Gauge in Green Zone)", (85, 245, 155)),
-            ("COOLANT FLOW", "18% Restricted  -->  100% Balanced Flow (LOTO Cleared)", (85, 245, 155)),
-            ("CHECKLIST STATUS", "[1:LOTO OK]  [2:PURGE OK]  [3:RESEAT OK]  [4:FLOW OK]", (72, 225, 255)),
+            ("COOLANT FLOW", "18% Restricted  -->  100% Balanced Flow (Lever +90° Open)", (85, 245, 155)),
+            ("TRAINEE SCORECARD", "100% (A+ FLAWLESS LOTO) — All 4 steps verified in sequence.", (72, 225, 255)),
         ],
-        "card_footer": "SYSTEM NOMINAL — ALL 4 REPAIR STEPS VERIFIED",
+        "card_footer": "SYSTEM NOMINAL — 100% (A+ FLAWLESS LOTO)",
         "accent": (72, 245, 148),
-        "sfx_events": [(2.2, "DiagnosticComplete.wav", 0.95), (7.5, "ButtonClick.wav", 0.65)],
+        "voiceover": (
+            "In Step Four, pinching Valve CV-101 removes the lockout clasp, rotates the lever open, and restores one hundred percent balanced flow. "
+            "All three-D halos turn emerald green and award the trainee competency scorecard."
+        ),
+        "sfx_events": [(2.0, "DiagnosticComplete.wav", 0.95)],
     },
     {
-        "id": "ch04b_post_repair_review",
+        "id": "ch07_before_after_compare",
         "nav_idx": 3,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 38.5,
-        "src_dur": 7.5,
-        "duration": 12.0,
-        "step_badge": "1:08 – 1:20   |   4B. SPATIAL INSTRUCTION INTERFACE & POST-REPAIR INSPECTION",
-        "title": "Dual-Modality Spatial Controls & Dynamic Repaired Subsystem Summaries",
-        "caption_1": "Trainees can interact either by pinching the 3D machine components directly or by pinching buttons on the floating UIKit panel.",
-        "caption_2": "Selecting [CV-101 VALVE] or [< PREV STEP] after repair displays updated nominal summaries without obscuring the 3D equipment.",
-        "card_tag": "SPATIAL UI DESIGN",
-        "card_title": "World-Anchored HUD\n& Clear Sightlines",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_part2.mov"),
+        "ss": 15.0,
+        "src_dur": 12.5,
+        "duration": 14.0,
+        "step_badge": "1:24 – 1:38   |   7. BEFORE / AFTER SPATIAL STATE COMPARISON MODE",
+        "title": "One-Pinch Before/After Toggle Compares Fault (118°C) vs. Nominal (42°C)",
+        "caption_1": "Pinching [COMPARE BEFORE/AFTER] toggles the 3D machine and telemetry between the initial fault snapshot and verified nominal state.",
+        "caption_2": "Trainees can also combine X-Ray Cutaway with nominal operation to inspect healthy internal flow across all three subsystems.",
+        "card_tag": "BEFORE / AFTER COMPARE",
+        "card_title": "Instant 3D Fault vs.\nNominal Comparison",
         "card_items": [
-            ("SIDE-BY-SIDE LAYOUT", "3D machine on left (-30.5 cm), floating UIKit checklist on right (+21 cm).", (72, 225, 255)),
-            ("ZERO HEAD-LOCKING", "Anchored in world space so trainees can look freely around the unit.", (85, 245, 155)),
-            ("COHERENT SUMMARIES", "Completed subsystems display verified nominal descriptions.", (190, 230, 255)),
-            ("HIGH-CONTRAST PILLS", "Dark backing pills keep spatial callouts readable from any angle.", (255, 210, 85)),
+            ("BEFORE (FAULT VIEW)", "118°C Overheat | 142 PSI Spike | 18% Restricted Flow.", (255, 165, 65)),
+            ("AFTER (NOMINAL VIEW)", "42°C Cooled Core | 45 PSI Regulated | 100% Balanced Flow.", (85, 245, 155)),
+            ("PRESERVES PROGRESS", "Compares 3D mechanical states without losing 4/4 completion.", (72, 225, 255)),
+            ("COMBINES WITH X-RAY", "Inspect internal sub-assemblies in both fault and repaired states.", (195, 230, 255)),
         ],
-        "card_footer": "[CV-101] NOMINAL: 100% BALANCED FLOW VERIFIED",
+        "card_footer": "COMPARE MODE: FAULT SNAPSHOT <-> VERIFIED NOMINAL",
         "accent": (72, 225, 255),
-        "sfx_events": [(2.4, "ButtonClick.wav", 0.70), (8.2, "ButtonClick.wav", 0.70)],
+        "voiceover": (
+            "After completion, trainees can pinch Compare Before and After to toggle the entire three-D machine and telemetry "
+            "between the initial overheated fault snapshot and the verified nominal state."
+        ),
+        "sfx_events": [(1.2, "ButtonClick.wav", 0.70), (6.5, "ButtonClick.wav", 0.70), (10.5, "ButtonClick.wav", 0.65)],
     },
     {
-        "id": "ch05a_editor_nav",
-        "nav_idx": 4,
-        "mode": "editor_split",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 38.5,
-        "src_dur": 7.5,
-        "duration": 7.5,
-        "step_badge": "1:20 – 1:35   |   5. STEP NAVIGATION, RESET, AUTOMATED TESTING & CLAD + MCP WORKFLOW",
-        "title": "Built & Verified in Lens Studio 5.24.1 with CLAD, Lens Studio MCP & LEAF",
-        "caption_1": "Step navigation (< PREV / NEXT >) and one-pinch [RESET UNIT] let trainees review steps or reset the simulation for repeatable practice.",
-        "caption_2": "Developed using Closed Loop Agentic Development (CLAD), Lens Studio MCP, and automated in-preview LEAF integration tests (3/3 passed).",
-        "accent": (72, 225, 255),
-        "sfx_events": [(1.5, "ButtonClick.wav", 0.70), (5.5, "ButtonClick.wav", 0.70)],
-    },
-    {
-        "id": "ch05b_editor_reset_leaf",
+        "id": "ch08a_editor_reset",
         "nav_idx": 4,
         "mode": "editor_split",
         "src": os.path.join(BUILD_DIR, "raw_polished_leaf_and_reset.mov"),
         "ss": 7.5,
         "src_dur": 7.5,
-        "duration": 7.5,
-        "step_badge": "1:20 – 1:35   |   5. STEP NAVIGATION, RESET, AUTOMATED TESTING & CLAD + MCP WORKFLOW",
-        "title": "One-Pinch Equipment Reset & Automated LEAF Scenario Verification in Preview",
-        "caption_1": "Resetting the unit restores all 3D mechanical parts (116°C, 140 PSI, 0/4 steps) so trainees can replay the maintenance scenario.",
-        "caption_2": "Three automated LEAF scenarios verify the complete 0/4 -> 4/4 repair flow, mid-repair LOTO state, and reset loop inside Lens Studio.",
-        "accent": (72, 245, 148),
-        "sfx_events": [(2.8, "ButtonClick.wav", 0.75), (4.5, "ScanSweep.wav", 0.70)],
+        "duration": 6.5,
+        "step_badge": "1:38 – 1:51   |   8. STEP NAVIGATION, RESET, CLAD + MCP & 4/4 LEAF TESTS",
+        "title": "Built & Verified in Lens Studio 5.24.1 with CLAD, Lens Studio MCP & LEAF",
+        "caption_1": "Step navigation (< PREV / NEXT >) and one-pinch [RESET UNIT] restore all 3D parts (116°C, 140 PSI, 0/4) for repeatable practice.",
+        "caption_2": "Developed using Closed Loop Agentic Development (CLAD), Lens Studio MCP, and 4 automated in-preview LEAF integration scenarios.",
+        "accent": (72, 225, 255),
+        "voiceover": (
+            "Built in Lens Studio five-point-twenty-four using Closed Loop Agentic Development and the Lens Studio M-C-P,"
+        ),
+        "sfx_events": [(2.2, "ButtonClick.wav", 0.75)],
     },
     {
-        "id": "ch06_closing_summary",
+        "id": "ch08b_editor_leaf_v3",
+        "nav_idx": 4,
+        "mode": "editor_split",
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_leaf.mov"),
+        "ss": 0.5,
+        "src_dur": 8.0,
+        "duration": 6.5,
+        "step_badge": "1:38 – 1:51   |   8. STEP NAVIGATION, RESET, CLAD + MCP & 4/4 LEAF TESTS",
+        "title": "4/4 Automated LEAF Scenarios Verify Full Repair, X-Ray, Safety & Comparison",
+        "caption_1": "Four automated LEAF scenarios verify the full 0/4 -> 4/4 repair flow, mid-repair LOTO state, reset loop, and adversarial safety interlock.",
+        "caption_2": "Live in-preview execution confirms [FieldFixAdversarialSafetyAndXRayScenario] PASSED with zero TypeScript or runtime errors.",
+        "accent": (72, 245, 148),
+        "voiceover": (
+            "FieldFix A R is verified by four automated LEAF integration scenarios covering the full repair loop, X-Ray cutaway, and safety interlock."
+        ),
+        "sfx_events": [(1.5, "ScanSweep.wav", 0.65), (4.8, "DiagnosticComplete.wav", 0.80)],
+    },
+    {
+        "id": "ch09_closing_summary",
         "nav_idx": 5,
         "mode": "hero_ar",
-        "src": os.path.join(BUILD_DIR, "raw_polished_gameplay_full.mov"),
-        "ss": 32.5,
-        "src_dur": 7.5,
+        "src": os.path.join(BUILD_DIR, "raw_campaign_v3_part2.mov"),
+        "ss": 22.0,
+        "src_dur": 5.5,
         "duration": 9.0,
-        "step_badge": "1:35 – 1:44   |   6. FIELDFIX AR — COMPLETED SPATIAL TRAINING EXPERIENCE",
+        "step_badge": "1:51 – 2:00   |   9. FIELDFIX AR — COMPLETED SPATIAL TRAINING EXPERIENCE",
         "title": "FieldFix AR: Hands-Free Maintenance Training Simulation for Snap SPECS",
-        "caption_1": "FieldFix AR transforms industrial repair checklists into an intuitive, hands-free 3D training simulation for Snap SPECS.",
-        "caption_2": "100% self-contained procedural 3D meshes, spatial audio, SIK hand interactions, SpectaclesUIKit HUD, and 3/3 passing LEAF tests.",
+        "caption_1": "FieldFix AR transforms industrial repair checklists into an intuitive, safety-interlocked 3D training simulation for Snap SPECS.",
+        "caption_2": "100% self-contained procedural 3D meshes, 3D X-Ray cutaway, LOTO safety interlock, Before/After compare, and 4/4 passing LEAF tests.",
         "card_tag": "LEARN AR WITH SPECS",
         "card_title": "FieldFix AR\nSubmission Summary",
         "card_items": [
             ("SPATIAL INTERACTION", "Direct SIK hand pinches on 3D valves, regulator & thermal relay.", (85, 245, 155)),
-            ("TRAINING SIMULATION", "Simulated telemetry (Temp/PSI/Flow) & guided 4-step LOTO workflow.", (72, 225, 255)),
-            ("CLAD + MCP WORKFLOW", "Closed Loop Agentic Development + Lens Studio MCP + 3 LEAF tests.", (255, 210, 85)),
-            ("ZERO EXTERNAL DEPS", "100% procedural 3D geometry & 44.1 kHz spatial WAV audio.", (195, 230, 255)),
+            ("3D X-RAY & COMPARE", "Exploded internal sub-assemblies & instant Before/After toggle.", (72, 225, 255)),
+            ("LOTO SAFETY INTERLOCK", "Blocks unsafe out-of-order actions & grades trainee competency.", (255, 210, 85)),
+            ("CLAD + 4/4 LEAF PASS", "Closed Loop Agentic Development + Lens Studio MCP + 4 LEAF tests.", (195, 230, 255)),
         ],
         "card_footer": "GITHUB.COM/AWANAFNAN17/FIELDFIX-AR   |   MIT LICENSE",
         "accent": (72, 245, 148),
-        "sfx_events": [(1.2, "DiagnosticComplete.wav", 0.95), (5.5, "RepairStepConfirm.wav", 0.70)],
+        "voiceover": (
+            "FieldFix A R: hands-free spatial diagnostics, interactive three-D repairs, and safety-first training built natively for Snap SPECS."
+        ),
+        "sfx_events": [(1.0, "DiagnosticComplete.wav", 0.90), (5.5, "RepairStepConfirm.wav", 0.65)],
     },
 ]
 
@@ -327,7 +387,6 @@ def create_overlay_png(ch: dict, out_path: str):
             )
             draw.text((CARD_BOX[0] + 40, y_cursor + 14), item_hdr, fill=item_col + (255,), font=f_ihdr)
 
-            # Wrap item_body cleanly at ~38 chars
             words = item_body.split()
             lines = []
             cur = ""
@@ -357,9 +416,7 @@ def create_overlay_png(ch: dict, out_path: str):
         draw.text((CARD_BOX[0] + 32, CARD_BOX[3] - 46), ch["card_footer"], fill=accent + (255,), font=load_font(13, bold=True))
 
     else:
-        # EDITOR + AR WORKFLOW MODE (used only in 80–95s Chapter 5):
-        # Left window: Live SPECS 27 AR Viewport (1020x844 at x=24..1044, y=74..918)
-        # Right window: Full Lens Studio 5.24.1 Editor (828x844 at x=1068..1896, y=74..918)
+        # EDITOR + AR WORKFLOW MODE (used only briefly in 1:38–1:51 Chapter 8):
         LEFT_BOX = (24, 74, 1044, 918)
         RIGHT_BOX = (1068, 74, 1896, 918)
 
@@ -370,10 +427,10 @@ def create_overlay_png(ch: dict, out_path: str):
         draw.rectangle((RIGHT_BOX[0] - 2, RIGHT_BOX[1] - 2, RIGHT_BOX[2] + 2, RIGHT_BOX[3] + 2), outline=(100, 150, 195, 225), width=2)
 
         draw.rounded_rectangle((LEFT_BOX[0] + 12, LEFT_BOX[1] + 12, LEFT_BOX[0] + 440, LEFT_BOX[1] + 42), radius=6, fill=(10, 18, 28, 215), outline=accent + (220,), width=1)
-        draw.text((LEFT_BOX[0] + 22, LEFT_BOX[1] + 19), "LIVE SPECS 27 AR PREVIEW (NAVIGATION & RESET)", fill=accent + (255,), font=f_badge)
+        draw.text((LEFT_BOX[0] + 22, LEFT_BOX[1] + 19), "LIVE SPECS 27 AR PREVIEW (RESET & LEAF PASS)", fill=accent + (255,), font=f_badge)
 
         draw.rounded_rectangle((RIGHT_BOX[0] + 12, RIGHT_BOX[1] + 12, RIGHT_BOX[0] + 520, RIGHT_BOX[1] + 42), radius=6, fill=(10, 18, 28, 215), outline=(130, 185, 230, 220), width=1)
-        draw.text((RIGHT_BOX[0] + 22, RIGHT_BOX[1] + 19), "LENS STUDIO 5.24.1 EDITOR  |  CLAD + MCP + LEAF TESTS", fill=(175, 225, 255, 255), font=f_badge)
+        draw.text((RIGHT_BOX[0] + 22, RIGHT_BOX[1] + 19), "LENS STUDIO 5.24.1 EDITOR  |  CLAD + MCP + 4/4 LEAF", fill=(175, 225, 255, 255), font=f_badge)
 
     # Bottom Concise Judge Narration Bar (y=928..1080)
     draw.rectangle((0, 928, W, H), fill=(12, 19, 30, 255))
@@ -387,11 +444,11 @@ def create_overlay_png(ch: dict, out_path: str):
     # 6-Part Narrative Progress Bar at very bottom (y=1022..1064)
     nav_labels = [
         "1. Concept (0:00)",
-        "2. Scan & Faults (0:10)",
-        "3. 3D Repairs (0:25)",
-        "4. Telemetry & Done (0:55)",
-        "5. Reset & CLAD/LEAF (1:20)",
-        "6. Summary (1:35)",
+        "2. Scan & X-Ray (0:12)",
+        "3. LOTO & 3D Repairs (0:28)",
+        "4. Scorecard & Compare (1:10)",
+        "5. Reset & 4/4 LEAF (1:38)",
+        "6. Summary (1:51)",
     ]
     bar_x0, bar_x1 = 26, 1894
     bar_w = bar_x1 - bar_x0
@@ -420,32 +477,29 @@ def create_overlay_png(ch: dict, out_path: str):
 
 
 def render_chapter_clip(ch: dict, idx: int) -> str:
-    overlay_png = os.path.join(BUILD_DIR, f"overlay_v2_{ch['id']}.png")
+    overlay_png = os.path.join(BUILD_DIR, f"overlay_v3_{ch['id']}.png")
     create_overlay_png(ch, overlay_png)
 
-    out_clip = os.path.join(BUILD_DIR, f"clip_v2_{idx:02d}_{ch['id']}.mp4")
+    out_clip = os.path.join(BUILD_DIR, f"clip_v3_{idx:02d}_{ch['id']}.mp4")
 
-    # Source recordings are 2272x1824 (includes 66px macOS window shadow); crop to 2140x1692 first
     pts_scale = ch["duration"] / ch["src_dur"]
     pts_filter = f"setpts={pts_scale:.6f}*PTS," if abs(pts_scale - 1.0) > 0.001 else ""
 
     if ch["mode"] == "hero_ar":
-        # Crop tightly around the active 3D equipment + floating HUD inside Preview 1:
-        # 868x531 at x=1200, y=594 (exact aspect ratio 868/531 = 1.6346 vs 1380/844 = 1.6350)
+        # Crop tightly around the active 3D equipment + all 9 rows of the floating HUD inside Preview 1:
+        # 900x550 at x=1192, y=608 (aspect ratio 900/550 = 1.6363 vs 1380/844 = 1.6350)
         filter_complex = (
             f"[0:v]{pts_filter}fps={FPS},crop=2140:1692:66:66,"
-            f"crop=868:531:1200:594,scale=1380:844:flags=lanczos[ar_vid];"
+            f"crop=900:550:1192:608,scale=1380:844:flags=lanczos[ar_vid];"
             f"color=c=#0a0f17:s=1920x1080:r={FPS}:d={ch['duration']}[base];"
             f"[base][ar_vid]overlay=24:74:shortest=1[tmp1];"
             f"[tmp1][1:v]overlay=0:0:shortest=1[outv]"
         )
     else:
-        # EDITOR + AR WORKFLOW MODE (80-95s):
-        # Left box: 1020x844 at (24, 74) -> cropped from Preview 1 active region (868x718 at x=1200, y=490)
-        # Right box: 828x844 at (1068, 74) -> scaled from full 2140x1692 Lens Studio window
+        # EDITOR + AR WORKFLOW MODE (1:38-1:51):
         filter_complex = (
             f"[0:v]{pts_filter}fps={FPS},crop=2140:1692:66:66,split=2[v_left][v_right];"
-            f"[v_left]crop=868:718:1200:490,scale=1020:844:flags=lanczos[left_vid];"
+            f"[v_left]crop=890:736:1192:450,scale=1020:844:flags=lanczos[left_vid];"
             f"[v_right]scale=828:654:flags=lanczos,pad=828:844:0:95:color=#0d1522[right_vid];"
             f"color=c=#0a0f17:s=1920x1080:r={FPS}:d={ch['duration']}[base];"
             f"[base][left_vid]overlay=24:74:shortest=1[tmp1];"
@@ -505,42 +559,87 @@ def load_wav_mono(path: str, sample_rate: int = 44100) -> list[float]:
     return samples
 
 
+def synthesize_voiceover_wav(text: str, out_wav: str, rate: int = 184) -> list[float]:
+    """Synthesizes clean offline macOS voiceover using /usr/bin/say and converts to 44.1kHz 16-bit mono WAV."""
+    aiff_path = out_wav.replace(".wav", ".aiff")
+    subprocess.run(["/usr/bin/say", "-v", "Samantha", "-r", str(rate), "-o", aiff_path, text], check=True)
+    subprocess.run(
+        ["ffmpeg", "-y", "-i", aiff_path, "-ar", "44100", "-ac", "1", "-c:a", "pcm_s16le", out_wav],
+        check=True,
+        capture_output=True,
+    )
+    return load_wav_mono(out_wav, 44100)
+
+
 def build_master_audio(total_duration: float, out_wav: str):
     sr = 44100
     total_samples = int(total_duration * sr)
-    track = [0.0] * total_samples
+    ambient_and_sfx = [0.0] * total_samples
+    vo_track = [0.0] * total_samples
+    vo_env = [0.0] * total_samples
 
-    # Subtle ambient clean-room hum + harmonic pulse for continuous spatial atmosphere
+    # 1. Subtle ambient clean-room hum + harmonic pulse
     for i in range(total_samples):
         t = i / sr
-        env = 0.016 + 0.005 * math.sin(2 * math.pi * 0.25 * t)
+        env = 0.015 + 0.004 * math.sin(2 * math.pi * 0.25 * t)
         hum = (
             0.55 * math.sin(2 * math.pi * 110.0 * t)
             + 0.30 * math.sin(2 * math.pi * 165.0 * t)
             + 0.15 * math.sin(2 * math.pi * 220.0 * t)
         )
-        track[i] = env * hum
+        ambient_and_sfx[i] = env * hum
 
-    # Overlay procedural SFX events from Assets/GeneratedSFX/
+    # 2. Overlay procedural SFX events + Chapter Voiceover Narration
     t_cursor = 0.0
-    for ch in CHAPTERS:
+    for idx, ch in enumerate(CHAPTERS):
         for offset_sec, wav_name, gain in ch["sfx_events"]:
             wav_path = os.path.join(SFX_DIR, wav_name)
             if os.path.exists(wav_path):
                 sfx = load_wav_mono(wav_path, sr)
                 start_idx = int((t_cursor + offset_sec) * sr)
                 for j, s in enumerate(sfx):
-                    idx = start_idx + j
-                    if 0 <= idx < total_samples:
-                        track[idx] += s * gain
+                    k = start_idx + j
+                    if 0 <= k < total_samples:
+                        ambient_and_sfx[k] += s * gain
+
+        vo_text = ch.get("voiceover", "").strip()
+        if vo_text:
+            vo_wav_path = os.path.join(BUILD_DIR, f"vo_v3_{idx:02d}_{ch['id']}.wav")
+            vo_samples = synthesize_voiceover_wav(vo_text, vo_wav_path, rate=184)
+            # Start voiceover 0.35s into each chapter, clamp to chapter duration - 0.25s
+            max_vo_samples = int((ch["duration"] - 0.45) * sr)
+            vo_start = int((t_cursor + 0.30) * sr)
+            for j, s in enumerate(vo_samples[:max_vo_samples]):
+                k = vo_start + j
+                if 0 <= k < total_samples:
+                    vo_track[k] += s * 0.88
+                    if abs(s) > 0.015:
+                        vo_env[k] = 1.0
+
         t_cursor += ch["duration"]
+
+    # Smooth the voiceover envelope (200ms window) for natural sidechain ducking of SFX/ambient
+    win = int(0.15 * sr)
+    active_count = 0
+    for i in range(min(win, total_samples)):
+        if vo_env[i] > 0.5:
+            active_count += 1
+
+    final_track = [0.0] * total_samples
+    for i in range(total_samples):
+        if i + win < total_samples and vo_env[i + win] > 0.5:
+            active_count += 1
+        if i - win >= 0 and vo_env[i - win] > 0.5:
+            active_count -= 1
+        duck = 0.34 if active_count > int(0.02 * sr) else 1.0
+        final_track[i] = vo_track[i] + ambient_and_sfx[i] * duck
 
     with wave.open(out_wav, "wb") as wf:
         wf.setnchannels(2)
         wf.setsampwidth(2)
         wf.setframerate(sr)
         buf = bytearray()
-        for s in track:
+        for s in final_track:
             clamped = max(-0.96, min(0.96, s))
             iv = int(clamped * 32767)
             buf += struct.pack("<hh", iv, iv)
@@ -557,16 +656,17 @@ def main():
         clips.append(clip_path)
         total_dur += ch["duration"]
 
-    concat_txt = os.path.join(BUILD_DIR, "concat_list_v2.txt")
+    concat_txt = os.path.join(BUILD_DIR, "concat_list_v3.txt")
     with open(concat_txt, "w") as f:
         for c in clips:
             f.write(f"file '{c}'\n")
 
-    master_wav = os.path.join(BUILD_DIR, "master_audio_v2.wav")
-    print(f"Synthesizing synchronized spatial audio track ({total_dur:.1f}s)...")
+    master_wav = os.path.join(BUILD_DIR, "master_audio_v3.wav")
+    print(f"Synthesizing voiceover + synchronized spatial audio track ({total_dur:.1f}s)...")
     build_master_audio(total_dur, master_wav)
 
-    print(f"Muxing final 1080p 30fps video to {OUT_MP4}...")
+    tmp_mp4 = os.path.join(BUILD_DIR, "FieldFix-AR-Demo-v3-fresh.mp4")
+    print(f"Muxing final 1080p 30fps video to {tmp_mp4}...")
     cmd = [
         "ffmpeg",
         "-y",
@@ -593,11 +693,18 @@ def main():
         "-shortest",
         "-movflags",
         "+faststart",
-        OUT_MP4,
+        tmp_mp4,
     ]
     subprocess.run(cmd, check=True, capture_output=True)
 
+    # Write as a brand-new inode so macOS Finder displays the exact current creation & modification timestamp
+    if os.path.exists(OUT_MP4):
+        os.remove(OUT_MP4)
+    shutil.copy2(tmp_mp4, OUT_MP4)
+
     if os.path.exists(os.path.dirname(ROOT_DEVPOST_MP4)):
+        if os.path.exists(ROOT_DEVPOST_MP4):
+            os.remove(ROOT_DEVPOST_MP4)
         shutil.copy2(OUT_MP4, ROOT_DEVPOST_MP4)
     print(f"Done! Created {OUT_MP4} ({total_dur:.1f}s)")
 

@@ -3,7 +3,12 @@
  * Multi-part procedural 3D Industrial Cryo-Coolant Pump & Relay Unit built with
  * Lens Studio MeshBuilder + SimpleVertexBaseColor material and SIK 3D Interactable hotspots.
  *
- * Strictly adheres to CLAD rules: zero UIKit or Component.Text usage in this 3D module.
+ * Includes:
+ * - Asymmetric 3D Valve Lever Handle (unmistakable 0 deg / -90 deg LOTO / +90 deg Open silhouette)
+ * - 3D Spatial X-Ray / Exploded Internal Sub-Assemblies (ValveInternalCryoSeal, RegulatorInternalDiaphragm, RelayInternalStatorCoil)
+ * - Before / After Fault vs. Nominal Spatial Comparison override
+ * - LOTO Safety Interlock 3D Red Hazard Flash
+ * - Strictly adheres to CLAD rules: zero UIKit or Component.Text usage in this 3D module.
  */
 
 import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable"
@@ -334,23 +339,25 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private valveHaloObj: SceneObject | null = null
   private valveHaloVisual: RenderMeshVisual | null = null
   private lotoSafetyClaspObj: SceneObject | null = null
+  private valveInternalObj: SceneObject | null = null
 
   private regulatorHotspotRoot: SceneObject | null = null
   private gaugeNeedlePivot: SceneObject | null = null
   private regulatorHaloObj: SceneObject | null = null
   private regulatorHaloVisual: RenderMeshVisual | null = null
+  private regulatorInternalObj: SceneObject | null = null
 
   private relayHotspotRoot: SceneObject | null = null
   private relayCorePivot: SceneObject | null = null
   private relayCoreVisual: RenderMeshVisual | null = null
   private relayHaloObj: SceneObject | null = null
   private relayHaloVisual: RenderMeshVisual | null = null
+  private relayInternalObj: SceneObject | null = null
 
   private scanRingObj: SceneObject | null = null
   private statusBeaconPivot: SceneObject | null = null
   private statusBeaconVisual: RenderMeshVisual | null = null
 
-  // New competitive spatial AR elements:
   // 1. 3D floating target action chevron that hovers over the active step's target component
   private activeTargetChevronObj: SceneObject | null = null
   private activeTargetChevronVisual: RenderMeshVisual | null = null
@@ -368,6 +375,8 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private activeStepTargetHotspot: HotspotId = "valve"
   private completedSteps: boolean[] = [false, false, false, false]
   private coolantFlowPct: number = 18
+  private xrayMode: boolean = false
+  private currentXrayBlend: number = 0.0
 
   private currentValveAngleDeg: number = 0
   private targetValveAngleDeg: number = 0
@@ -384,6 +393,11 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private elapsedTime: number = 0
   private scanTimer: number = 0
   private pinchFlashTimers: Record<HotspotId, number> = {
+    valve: 0,
+    regulator: 0,
+    relay: 0
+  }
+  private interlockFlashTimers: Record<HotspotId, number> = {
     valve: 0,
     regulator: 0,
     relay: 0
@@ -474,9 +488,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     // 3D Target Pointer Chevron (inverted pyramid + halo collar)
     const buildChevron = (primary: RGBA, accent: RGBA): RenderMesh => {
       const pb = new ProceduralPartBuilder()
-      // Downward-pointing cone/pyramid tip (radiusTop=0.95, radiusBottom=0.05)
       pb.addCylinderY(0, -0.35, 0, 0.95, 0.08, 1.35, 6, primary, accent)
-      // Upper stem & horizontal collar ring
       pb.addCylinderY(0, 0.65, 0, 0.35, 0.35, 0.85, 8, accent, primary)
       pb.addRingY(0, 1.05, 0, 0.75, 1.15, 0.18, 14, primary)
       return pb.buildMesh()
@@ -501,7 +513,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.baseRoot = global.scene.createSceneObject("EquipmentBaseChassis")
     this.baseRoot.setParent(this.sceneObject)
 
-    // 1. Build Base Industrial Skid + Pump Manifold Mesh
+    // 1. Build Base Industrial Skid + Pump Manifold Mesh + 3D Callout Leader Struts
     const chassisPb = new ProceduralPartBuilder()
     const darkSkidTop: RGBA = [0.22, 0.26, 0.33, 1.0]
     const darkSkidSide: RGBA = [0.15, 0.18, 0.24, 1.0]
@@ -511,6 +523,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     const pumpBodyTop: RGBA = [0.28, 0.36, 0.46, 1.0]
     const pumpBodySide: RGBA = [0.20, 0.27, 0.36, 1.0]
     const cyanConduit: RGBA = [0.22, 0.78, 0.92, 1.0]
+    const leaderStrutColor: RGBA = [0.32, 0.88, 1.0, 1.0]
 
     // Heavy mounting skid platform
     chassisPb.addBox(0, -4.6, 0, 21.0, 1.4, 10.5, darkSkidTop, darkSkidSide)
@@ -533,6 +546,11 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     chassisPb.addCylinderY(0, 3.2, 0.4, 1.05, 1.05, 3.6, 14, steelPipe, pipeCap)
     // Beacon mast at back-left
     chassisPb.addCylinderY(-4.2, 4.5, -2.2, 0.35, 0.45, 7.5, 10, darkSkidTop, pipeCap)
+
+    // 3D Callout Leader Struts tethering the 3 subsystems to their floating callout badges
+    chassisPb.addCylinderY(-7.4, -3.5, 2.4, 0.12, 0.12, 3.2, 8, leaderStrutColor, hazardStripe)
+    chassisPb.addCylinderY(0.8, 8.2, 1.8, 0.12, 0.12, 2.6, 8, leaderStrutColor, hazardStripe)
+    chassisPb.addCylinderY(7.4, -3.5, 2.0, 0.12, 0.12, 3.2, 8, leaderStrutColor, hazardStripe)
 
     this.attachMeshVisual(this.baseRoot, chassisPb.buildMesh())
 
@@ -560,7 +578,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.valveHotspotRoot = this.createHotspotContainer(
       "Hotspot_CoolantValve",
       new vec3(-6.8, 1.2, 2.4),
-      new vec3(6.2, 6.2, 6.2),
+      new vec3(5.2, 5.2, 7.0),
       "valve"
     )
 
@@ -569,7 +587,18 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     valveBodyPb.addCylinderY(0, -0.4, -1.2, 1.25, 1.35, 2.6, 14, steelPipe, pipeCap)
     this.attachMeshVisual(this.valveHotspotRoot, valveBodyPb.buildMesh())
 
-    // Articulated Valve Handwheel Pivot
+    // Internal X-Ray Sub-Assembly 1: Cryo-Ball Seal & Intake Venturi Core
+    this.valveInternalObj = global.scene.createSceneObject("ValveInternalCryoSeal")
+    this.valveInternalObj.setParent(this.valveHotspotRoot)
+    this.valveInternalObj.getTransform().setLocalPosition(new vec3(0, 0, -0.6))
+    const valveIntPb = new ProceduralPartBuilder()
+    valveIntPb.addCylinderY(0, 0, 0, 0.92, 0.92, 1.85, 14, [0.18, 0.92, 1.0, 1.0], [1.0, 0.85, 0.25, 1.0])
+    valveIntPb.addRingZ(0, 0, 0, 0.65, 1.28, 0.28, 16, [1.0, 0.48, 0.16, 1.0])
+    valveIntPb.addCylinderX(0, 0, 0, 0.55, 2.2, 12, [0.35, 0.98, 0.85, 1.0], [1.0, 1.0, 1.0, 1.0])
+    this.attachMeshVisual(this.valveInternalObj, valveIntPb.buildMesh())
+    this.valveInternalObj.enabled = false
+
+    // Articulated Valve Handwheel Pivot + Asymmetric High-Visibility Lever Arm
     this.valveWheelPivot = global.scene.createSceneObject("ValveWheelPivot")
     this.valveWheelPivot.setParent(this.valveHotspotRoot)
     this.valveWheelPivot.getTransform().setLocalPosition(new vec3(0, 0, 0.5))
@@ -577,10 +606,13 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     const wheelPb = new ProceduralPartBuilder()
     const wheelRim: RGBA = [0.95, 0.52, 0.14, 1.0]
     const wheelSpoke: RGBA = [0.82, 0.86, 0.92, 1.0]
+    const leverYellow: RGBA = [1.0, 0.92, 0.22, 1.0]
     wheelPb.addRingZ(0, 0, 0, 1.45, 1.95, 0.42, 20, wheelRim)
     wheelPb.addBox(0, 0, 0, 3.2, 0.36, 0.32, wheelSpoke, wheelSpoke)
     wheelPb.addBox(0, 0, 0, 0.36, 3.2, 0.32, wheelSpoke, wheelSpoke)
-    wheelPb.addBox(0, 1.7, 0.32, 0.5, 0.7, 0.35, [1.0, 0.95, 0.3, 1.0], wheelRim)
+    // Prominent asymmetric lever arm extending +Y so 0 deg vs -90 deg (LOTO) vs +90 deg (Open) is unmistakable
+    wheelPb.addBox(0, 1.65, 0.34, 0.55, 2.2, 0.38, wheelRim, wheelRim)
+    wheelPb.addBox(0, 2.75, 0.42, 0.92, 0.68, 0.48, leverYellow, wheelRim)
     this.attachMeshVisual(this.valveWheelPivot, wheelPb.buildMesh())
 
     // 3D Lockout-Tagout (LOTO) Safety Clasp on Valve (visible when Step 1 is locked out)
@@ -605,7 +637,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.regulatorHotspotRoot = this.createHotspotContainer(
       "Hotspot_PressureRegulator",
       new vec3(0, 5.8, 1.8),
-      new vec3(6.2, 6.2, 6.2),
+      new vec3(5.2, 5.2, 7.0),
       "regulator"
     )
 
@@ -616,6 +648,18 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     regPb.addBox(-0.95, 0.65, 0.32, 0.45, 0.45, 0.18, [1.0, 0.25, 0.25, 1.0], [1.0, 0.25, 0.25, 1.0])
     regPb.addBox(0.95, 0.65, 0.32, 0.45, 0.45, 0.18, [0.22, 0.95, 0.52, 1.0], [0.22, 0.95, 0.52, 1.0])
     this.attachMeshVisual(this.regulatorHotspotRoot, regPb.buildMesh())
+
+    // Internal X-Ray Sub-Assembly 2: High-Pressure Relief Spring & Diaphragm Spool
+    this.regulatorInternalObj = global.scene.createSceneObject("RegulatorInternalDiaphragm")
+    this.regulatorInternalObj.setParent(this.regulatorHotspotRoot)
+    this.regulatorInternalObj.getTransform().setLocalPosition(new vec3(0, -0.2, -0.5))
+    const regIntPb = new ProceduralPartBuilder()
+    regIntPb.addCylinderY(0, 0, 0, 0.48, 0.48, 2.4, 12, [1.0, 0.78, 0.22, 1.0], [0.22, 0.95, 1.0, 1.0])
+    for (let i = -2; i <= 2; i++) {
+      regIntPb.addRingY(0, i * 0.42, 0, 0.52, 1.05, 0.14, 14, [0.25, 0.95, 1.0, 1.0])
+    }
+    this.attachMeshVisual(this.regulatorInternalObj, regIntPb.buildMesh())
+    this.regulatorInternalObj.enabled = false
 
     // Articulated Gauge Needle Pivot
     this.gaugeNeedlePivot = global.scene.createSceneObject("GaugeNeedlePivot")
@@ -638,13 +682,25 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.relayHotspotRoot = this.createHotspotContainer(
       "Hotspot_ThermalRelayCore",
       new vec3(6.8, 1.4, 2.0),
-      new vec3(6.4, 6.8, 6.4),
+      new vec3(5.4, 5.6, 7.0),
       "relay"
     )
 
     const relayCollarPb = new ProceduralPartBuilder()
     relayCollarPb.addCylinderY(0, -1.6, -1.2, 1.85, 2.05, 1.8, 16, darkSkidTop, steelPipe)
     this.attachMeshVisual(this.relayHotspotRoot, relayCollarPb.buildMesh())
+
+    // Internal X-Ray Sub-Assembly 3: Copper Stator Coil & Bimetallic Trip Plunger
+    this.relayInternalObj = global.scene.createSceneObject("RelayInternalStatorCoil")
+    this.relayInternalObj.setParent(this.relayHotspotRoot)
+    this.relayInternalObj.getTransform().setLocalPosition(new vec3(0, 0.2, -0.6))
+    const relayIntPb = new ProceduralPartBuilder()
+    relayIntPb.addCylinderY(0, 0, 0, 0.62, 0.62, 3.2, 14, [1.0, 0.55, 0.18, 1.0], [0.22, 0.96, 1.0, 1.0])
+    for (let i = -2; i <= 2; i++) {
+      relayIntPb.addRingY(0, i * 0.52, 0, 0.65, 1.22, 0.16, 16, [1.0, 0.35, 0.20, 1.0])
+    }
+    this.attachMeshVisual(this.relayInternalObj, relayIntPb.buildMesh())
+    this.relayInternalObj.enabled = false
 
     // Articulated Thermal Relay Core Pivot
     this.relayCorePivot = global.scene.createSceneObject("ThermalRelayCorePivot")
@@ -714,8 +770,20 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.currentPhase = snapshot.phase
     this.selectedHotspot = snapshot.selectedHotspot
     this.activeStepTargetHotspot = snapshot.currentStep.targetHotspot
-    this.completedSteps = [...snapshot.completedSteps]
+    this.completedSteps = snapshot.comparisonFaultPreview
+      ? [false, false, false, false]
+      : [...snapshot.completedSteps]
     this.coolantFlowPct = snapshot.coolantFlowPct
+    this.xrayMode = snapshot.xrayMode
+
+    if (snapshot.interlockFlashHotspot) {
+      this.interlockFlashTimers[snapshot.interlockFlashHotspot] = 0.95
+    }
+
+    // Enable or disable 3D X-Ray internal sub-assemblies
+    if (this.valveInternalObj) this.valveInternalObj.enabled = this.xrayMode
+    if (this.regulatorInternalObj) this.regulatorInternalObj.enabled = this.xrayMode
+    if (this.relayInternalObj) this.relayInternalObj.enabled = this.xrayMode
 
     if (snapshot.phase === "SCANNING") {
       this.scanTimer = 0
@@ -726,7 +794,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.scanRingObj.enabled = false
     }
 
-    // Target mechanical articulations from completed steps:
+    // Target mechanical articulations from completed steps (or comparison override):
     if (this.completedSteps[3]) {
       this.targetValveAngleDeg = 90
     } else if (this.completedSteps[0]) {
@@ -744,7 +812,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     // and -38 deg points right (green nominal marker at x=+0.95).
     this.targetGaugeAngleDeg = this.completedSteps[1] ? -38 : 48
 
-    // Step 2 (Relay Core Reseat): retracts relay core from +1.35 cm down to 0.0 cm & rotates latch 45 deg
+    // Step 3 (Relay Core Reseat): retracts relay core from +1.35 cm down to 0.0 cm & rotates latch 45 deg
     this.targetRelayLiftCm = this.completedSteps[2] ? 0.0 : 1.35
     this.targetRelayRotationDeg = this.completedSteps[2] ? 45 : 0
 
@@ -759,9 +827,9 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
     // Update Overhead Status Beacon mesh
     if (this.statusBeaconVisual) {
-      if (snapshot.phase === "COMPLETED" && this.beaconMeshGreen) {
+      if (!snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED" && this.beaconMeshGreen) {
         this.statusBeaconVisual.mesh = this.beaconMeshGreen
-      } else if (snapshot.completedCount >= 1 && this.beaconMeshAmber) {
+      } else if (!snapshot.comparisonFaultPreview && snapshot.completedCount >= 1 && this.beaconMeshAmber) {
         this.statusBeaconVisual.mesh = this.beaconMeshAmber
       } else if (this.beaconMeshRed) {
         this.statusBeaconVisual.mesh = this.beaconMeshRed
@@ -769,7 +837,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     }
 
     // Update 3D Active Step Target Pointer position & color
-    if (snapshot.phase === "COMPLETED") {
+    if (!snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED") {
       this.targetChevronPos = new vec3(0, 10.2, 1.8)
       if (this.activeTargetChevronVisual && this.chevronMeshGreen) {
         this.activeTargetChevronVisual.mesh = this.chevronMeshGreen
@@ -790,7 +858,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
     // Update Coolant Flow Ring colors
     const targetFlowMesh =
-      snapshot.phase === "COMPLETED"
+      !snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED"
         ? this.flowRingMeshGreen
         : this.completedSteps[0]
           ? this.flowRingMeshCyan
@@ -807,7 +875,10 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
   private updateHotspotHalos(snapshot: FieldFixUISnapshot): void {
     const pickHaloMesh = (id: HotspotId, isRepaired: boolean): RenderMesh | null => {
-      if (snapshot.phase === "COMPLETED" || isRepaired) {
+      if (this.interlockFlashTimers[id] > 0 || snapshot.interlockFlashHotspot === id) {
+        return this.haloMeshRed
+      }
+      if (!snapshot.comparisonFaultPreview && (snapshot.phase === "COMPLETED" || isRepaired)) {
         return this.haloMeshGreen
       }
       if (snapshot.selectedHotspot === id || snapshot.currentStep.targetHotspot === id) {
@@ -842,32 +913,70 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.elapsedTime += clampedDt
     const lerpFactor = Math.min(1.0, clampedDt * 6.5)
 
-    // 1. Animate Valve Handwheel rotation
+    // Smoothly blend 3D Spatial X-Ray Exploded View factor (0.0 -> 1.0)
+    const targetXray = this.xrayMode ? 1.0 : 0.0
+    this.currentXrayBlend += (targetXray - this.currentXrayBlend) * lerpFactor
+
+    // 1. Animate Valve Handwheel rotation + X-Ray axial Z-explosion
     this.currentValveAngleDeg += (this.targetValveAngleDeg - this.currentValveAngleDeg) * lerpFactor
     if (this.valveWheelPivot) {
       this.valveWheelPivot
         .getTransform()
+        .setLocalPosition(new vec3(-0.85 * this.currentXrayBlend, -0.65 * this.currentXrayBlend, 0.5 + this.currentXrayBlend * 1.65))
+      this.valveWheelPivot
+        .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0, 0, (this.currentValveAngleDeg * Math.PI) / 180))
     }
+    if (this.valveInternalObj && this.valveInternalObj.enabled) {
+      this.valveInternalObj
+        .getTransform()
+        .setLocalPosition(new vec3(0, 2.75 * this.currentXrayBlend, 1.45 * this.currentXrayBlend))
+      this.valveInternalObj
+        .getTransform()
+        .setLocalRotation(quat.fromEulerAngles(0.35, this.elapsedTime * 1.8, 0))
+    }
 
-    // 2. Animate Pressure Gauge Needle
+    // 2. Animate Pressure Gauge Needle + X-Ray explosion
     const jitter = this.completedSteps[1] ? 0 : Math.sin(this.elapsedTime * 14.0) * 3.0
     this.currentGaugeAngleDeg += (this.targetGaugeAngleDeg - this.currentGaugeAngleDeg) * lerpFactor
     if (this.gaugeNeedlePivot) {
       this.gaugeNeedlePivot
         .getTransform()
+        .setLocalPosition(new vec3(0, -0.2, 0.42 + this.currentXrayBlend * 1.35))
+      this.gaugeNeedlePivot
+        .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0, 0, ((this.currentGaugeAngleDeg + jitter) * Math.PI) / 180))
     }
+    if (this.regulatorInternalObj && this.regulatorInternalObj.enabled) {
+      this.regulatorInternalObj
+        .getTransform()
+        .setLocalPosition(new vec3(0, 2.85 * this.currentXrayBlend, 1.45 * this.currentXrayBlend))
+      this.regulatorInternalObj
+        .getTransform()
+        .setLocalRotation(quat.fromEulerAngles(0.25, -this.elapsedTime * 1.6, 0))
+    }
 
-    // 3. Animate Thermal Relay Core lift & latch rotation
+    // 3. Animate Thermal Relay Core lift & latch rotation + X-Ray explosion
     this.currentRelayLiftCm += (this.targetRelayLiftCm - this.currentRelayLiftCm) * lerpFactor
     this.currentRelayRotationDeg += (this.targetRelayRotationDeg - this.currentRelayRotationDeg) * lerpFactor
     if (this.relayCorePivot) {
       const thermalBob = !this.completedSteps[2] ? Math.sin(this.elapsedTime * 6.0) * 0.12 : 0
-      this.relayCorePivot.getTransform().setLocalPosition(new vec3(0, this.currentRelayLiftCm + thermalBob, -1.2))
+      this.relayCorePivot
+        .getTransform()
+        .setLocalPosition(
+          new vec3(0.75 * this.currentXrayBlend, this.currentRelayLiftCm + thermalBob - 0.45 * this.currentXrayBlend, -1.2 - this.currentXrayBlend * 0.65)
+        )
       this.relayCorePivot
         .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0, (this.currentRelayRotationDeg * Math.PI) / 180, 0))
+    }
+    if (this.relayInternalObj && this.relayInternalObj.enabled) {
+      this.relayInternalObj
+        .getTransform()
+        .setLocalPosition(new vec3(0, 3.15 * this.currentXrayBlend, 1.45 * this.currentXrayBlend))
+      this.relayInternalObj
+        .getTransform()
+        .setLocalRotation(quat.fromEulerAngles(0.3, this.elapsedTime * 2.1, 0))
     }
 
     // 4. Smoothly move & bob the 3D Active Step Target Pointer Chevron
@@ -895,9 +1004,9 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     }
 
     // 6. Pulse selected hotspot halo for immediate spatial guidance
-    this.pulseHalo(this.valveHaloObj, "valve")
-    this.pulseHalo(this.regulatorHaloObj, "regulator")
-    this.pulseHalo(this.relayHaloObj, "relay")
+    this.pulseHalo(this.valveHaloObj, "valve", clampedDt)
+    this.pulseHalo(this.regulatorHaloObj, "regulator", clampedDt)
+    this.pulseHalo(this.relayHaloObj, "relay", clampedDt)
 
     // 7. Animate Scan Sweep Ring if active
     if (this.scanRingObj && this.scanRingObj.enabled) {
@@ -913,17 +1022,22 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     }
   }
 
-  private pulseHalo(haloObj: SceneObject | null, id: HotspotId): void {
+  private pulseHalo(haloObj: SceneObject | null, id: HotspotId, clampedDt: number): void {
     if (!haloObj) return
     const flash = this.pinchFlashTimers[id] > 0 ? (this.pinchFlashTimers[id] / 0.45) * 0.26 : 0
     if (this.pinchFlashTimers[id] > 0) {
-      this.pinchFlashTimers[id] = Math.max(0, this.pinchFlashTimers[id] - 0.016)
+      this.pinchFlashTimers[id] = Math.max(0, this.pinchFlashTimers[id] - clampedDt)
+    }
+    const interlockBoost =
+      this.interlockFlashTimers[id] > 0 ? Math.abs(Math.sin(this.elapsedTime * 18.0)) * 0.34 : 0
+    if (this.interlockFlashTimers[id] > 0) {
+      this.interlockFlashTimers[id] = Math.max(0, this.interlockFlashTimers[id] - clampedDt)
     }
     const isTarget = this.selectedHotspot === id || this.activeStepTargetHotspot === id
     const speed = isTarget ? 6.5 : 3.0
     const amp = isTarget ? 0.14 : 0.05
     const base = isTarget ? 1.10 : 0.96
-    const s = base + Math.sin(this.elapsedTime * speed) * amp + flash
+    const s = base + Math.sin(this.elapsedTime * speed) * amp + flash + interlockBoost
     haloObj.getTransform().setLocalScale(new vec3(s, s, 1.0))
   }
 }
