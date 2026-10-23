@@ -1,0 +1,51 @@
+MIT License (Original FieldFix AR Code, Procedural Assets & Documentation)
+
+Copyright (c) 2026 FieldFix AR Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+THIRD-PARTY PACKAGES & SNAP INC. LENS STUDIO ASSETS NOTICE
+================================================================================
+
+The MIT License above applies exclusively to the original FieldFix AR source
+code (`Assets/Scripts/*.ts`, `Assets/Tests/*.ts`, `devpost/build_demo_video.py`),
+documentation (`README.md`, `devpost/*.md`), procedurally generated 3D runtime
+geometry (`MeshBuilder`), and algorithmically synthesized audio files
+(`Assets/GeneratedSFX/*.wav`).
+
+It does NOT override or replace the licenses of third-party packages or official
+Snap Inc. Lens Studio SDK assets bundled in this project for reproducible Lens
+Studio loading:
+
+1. Snap Inc. Official Lens Studio Packages & Template Assets:
+   - `Packages/SpectaclesInteractionKit.lspkg` (SIK v2.0.0)
+   - `Packages/SpectaclesUIKit.lspkg` (UIKit v2.0.0)
+   - `Packages/Leaf.lspkg` (LEAF v2.0.2)
+   - `Packages/AiPreviewAgentInspect.lspkg` (v1.0.0)
+   - `Packages/AiPreviewAgentInteract.lspkg` (v1.0.0)
+   - `Packages/Bitmoji 3D.lsc` (SPECS Base Template component)
+   - `Assets/SimpleVertexBaseColor.lspkg/` (Lens Studio vertex-color shader/material)
+   - `Assets/Render/Echopark.hdr`, `Device Camera Texture.deviceCameraTexture`,
+     `Render Target.renderTarget` (SPECS Base Template render assets)
+   - `Support/editor.d.ts` (Lens Studio Editor API TypeScript definitions)
+
+   Copyright (c) Snap Inc. All rights reserved. Use of these packages and
+   template files is governed by the Snap Inc. Lens Studio License Agreement
+   (https://lensstudio.snapchat.com/terms/) and Spectacles Developer Terms.

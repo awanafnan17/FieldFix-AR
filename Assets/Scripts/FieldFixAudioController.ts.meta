@@ -1,0 +1,46 @@
+- !<AssetImportMetadata/7d4dd0c9-d9d3-405c-b942-71ec8cde099a>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 06fe244b-0161-40e2-ab79-0cf5b3e957d4
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 06fe244b-0161-40e2-ab79-0cf5b3e957d4
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 4c9a03b2-e68f-4973-aba5-e8c4816b1103
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/4c9a03b2-e68f-4973-aba5-e8c4816b1103>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 065dc555-78ad-4cb8-ae5e-0bc5364ddbb8
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    masterVolume: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - masterVolume: 0.850000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input float masterVolume = 0.85 {"hint":"Master volume for FieldFix AR spatial audio cues (0.0 - 1.0)"}'

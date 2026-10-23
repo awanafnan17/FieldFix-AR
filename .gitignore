@@ -1,0 +1,39 @@
+# Lens Studio local cache, lockfiles & user preferences
+Cache/
+LocalStorage/
+Workspaces/
+PluginsUserPreferences/
+*.lock
+*.tmp
+*.log
+.DS_Store
+
+# Local MCP session tokens (generated per Lens Studio session; never commit tokens)
+.mcp.json
+.cursor/mcp.json
+.vscode/mcp.json
+.codex/config.toml
+.claude/settings.local.json
+ls-live-instance.json
+
+# Scratch preview captures & temporary video build frames (official captures in devpost/screenshots/)
+preview_screenshot.png
+preview_state_1_standby.png
+preview_state_4_completed.png
+devpost/_video_build/
+
+# Added by Lens Studio (LEAF plugin)
+leaf_plugin_settings.json
+
+# BEGIN Lens Studio managed Agents-Docs block
+.mcp.json
+.cursor/mcp.json
+.vscode/mcp.json
+.codex/config.toml
+.claude/settings.local.json
+ls-live-instance.json
+ls-live-instance.json.tmp
+# END Lens Studio managed Agents-Docs block
+
+__pycache__/
+*.py[cod]

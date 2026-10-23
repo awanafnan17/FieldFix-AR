@@ -1,0 +1,55 @@
+- !<AssetImportMetadata/33088f02-d20c-47f4-a854-80f3cbe017da>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> b438977b-ff22-47f0-924f-a5601a3d1572
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> b438977b-ff22-47f0-924f-a5601a3d1572
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 48651d77-877e-4f1d-8d49-043409bcf973
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/48651d77-877e-4f1d-8d49-043409bcf973>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 4f115979-452c-4549-9113-2b9017b6dee2
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    audioController: false
+    diagnosticUI: false
+    equipmentMesh: false
+    scanDurationSec: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - equipmentMesh: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      diagnosticUI: !<MappingBased.AssignableType_2> 00000000-0000-0000-0000-000000000000
+      audioController: !<MappingBased.AssignableType_3> 00000000-0000-0000-0000-000000000000
+      scanDurationSec: 0.750000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input AssignableType_1 equipmentMesh {"hint":"3D procedural Cryo-Coolant Pump & Relay Unit mesh controller"}'
+    - '// @input AssignableType_2 diagnosticUI {"hint":"World-space SpectaclesUIKit diagnostic & repair UI panel"}'
+    - '// @input AssignableType_3 audioController {"hint":"Spatial audio feedback controller"}'
+    - '// @input float scanDurationSec = 1.2 {"hint":"Duration of the laser telemetry scan sweep in seconds"}'

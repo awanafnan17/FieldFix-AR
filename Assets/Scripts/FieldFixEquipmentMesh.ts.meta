@@ -1,0 +1,46 @@
+- !<AssetImportMetadata/c695eca9-174f-4e65-9043-8f28be250850>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> f3ddef0e-3182-400a-900c-4f18d108b8b0
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> f3ddef0e-3182-400a-900c-4f18d108b8b0
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> fd4e0d46-9a10-480e-9265-238583c60cee
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/fd4e0d46-9a10-480e-9265-238583c60cee>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 6fe395f0-d5d5-4389-a57f-2098bc3663a1
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    vertexColorMaterial: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - vertexColorMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input Asset.Material vertexColorMaterial {"hint":"Vertex color material from SimpleVertexBaseColor.lspkg"}'
