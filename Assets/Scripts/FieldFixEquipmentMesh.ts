@@ -372,8 +372,8 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private currentValveAngleDeg: number = 0
   private targetValveAngleDeg: number = 0
 
-  private currentGaugeAngleDeg: number = -52
-  private targetGaugeAngleDeg: number = -52
+  private currentGaugeAngleDeg: number = 48
+  private targetGaugeAngleDeg: number = 48
 
   private currentRelayLiftCm: number = 1.35
   private targetRelayLiftCm: number = 1.35
@@ -383,6 +383,11 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
   private elapsedTime: number = 0
   private scanTimer: number = 0
+  private pinchFlashTimers: Record<HotspotId, number> = {
+    valve: 0,
+    regulator: 0,
+    relay: 0
+  }
 
   // Pre-built colored meshes for dynamic state swapping
   private haloMeshRed: RenderMesh | null = null
@@ -692,6 +697,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
     const interactable = obj.createComponent(Interactable.getTypeName()) as Interactable
     interactable.onTriggerEnd.add(() => {
+      this.pinchFlashTimers[hotspotId] = 0.45
       this.onHotspotTriggeredEvent.invoke(hotspotId)
     })
     interactable.onHoverEnter.add(() => {
@@ -734,8 +740,9 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.lotoSafetyClaspObj.enabled = this.completedSteps[0] && !this.completedSteps[3]
     }
 
-    // Step 1 (Regulator Purge): sweeps needle from danger (-52 deg) to safe (+34 deg)
-    this.targetGaugeAngleDeg = this.completedSteps[1] ? 34 : -52
+    // Step 2 (Regulator Purge): in right-handed +Z space, +48 deg points left (red danger marker at x=-0.95)
+    // and -38 deg points right (green nominal marker at x=+0.95).
+    this.targetGaugeAngleDeg = this.completedSteps[1] ? -38 : 48
 
     // Step 2 (Relay Core Reseat): retracts relay core from +1.35 cm down to 0.0 cm & rotates latch 45 deg
     this.targetRelayLiftCm = this.completedSteps[2] ? 0.0 : 1.35
@@ -908,11 +915,15 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
   private pulseHalo(haloObj: SceneObject | null, id: HotspotId): void {
     if (!haloObj) return
+    const flash = this.pinchFlashTimers[id] > 0 ? (this.pinchFlashTimers[id] / 0.45) * 0.26 : 0
+    if (this.pinchFlashTimers[id] > 0) {
+      this.pinchFlashTimers[id] = Math.max(0, this.pinchFlashTimers[id] - 0.016)
+    }
     const isTarget = this.selectedHotspot === id || this.activeStepTargetHotspot === id
-    const speed = isTarget ? 6.0 : 3.0
-    const amp = isTarget ? 0.12 : 0.05
-    const base = isTarget ? 1.08 : 0.96
-    const s = base + Math.sin(this.elapsedTime * speed) * amp
+    const speed = isTarget ? 6.5 : 3.0
+    const amp = isTarget ? 0.14 : 0.05
+    const base = isTarget ? 1.10 : 0.96
+    const s = base + Math.sin(this.elapsedTime * speed) * amp + flash
     haloObj.getTransform().setLocalScale(new vec3(s, s, 1.0))
   }
 }

@@ -5,6 +5,7 @@
  * Strictly adheres to CLAD Channel-A UI architecture:
  * - All UIKit primitives (Frame, Button, ProgressBar) and Component.Text live exclusively in this *UI.ts module.
  * - Exposes typed Event<T> emitters for user actions and renderSnapshot() for state updates.
+ * - Includes high-contrast dark backing pills and dynamic component status descriptions for SPECS 27.
  */
 
 import Event, { PublicApi } from "SpectaclesInteractionKit.lspkg/Utils/Event"
@@ -128,24 +129,24 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       root,
       "TitleBrandText",
       new vec3(0, 17.2, 0.1),
-      new vec2(26.2, 2.2),
-      "FIELDFIX AR  //  HANDS-FREE DIAGNOSTIC & REPAIR",
-      32,
-      new vec4(0.58, 0.92, 1.0, 1.0),
+      new vec2(26.4, 2.3),
+      "FIELDFIX AR  //  MAINTENANCE TRAINING SIMULATION",
+      33,
+      new vec4(0.62, 0.95, 1.0, 1.0),
       true,
-      new vec4(0.05, 0.10, 0.18, 0.85)
+      new vec4(0.04, 0.10, 0.18, 0.92)
     )
 
     this.headerBadgeText = this.createTextLabel(
       root,
       "HeaderBadgeText",
       new vec3(0, 14.8, 0.15),
-      new vec2(26.2, 2.5),
+      new vec2(26.4, 2.5),
       "STANDBY: CRYO-PUMP UNIT #04",
-      43,
-      new vec4(1.0, 0.82, 0.28, 1.0),
+      44,
+      new vec4(1.0, 0.84, 0.30, 1.0),
       true,
-      new vec4(0.14, 0.08, 0.04, 0.88)
+      new vec4(0.14, 0.08, 0.03, 0.94)
     )
 
     // 2. Live Telemetry Readout Row
@@ -153,19 +154,19 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       root,
       "TelemetryBarText",
       new vec3(0, 12.3, 0.15),
-      new vec2(26.2, 2.3),
-      "TEMP: 118C  |  PSI: 142  |  FLOW: 18%",
-      35,
-      new vec4(0.48, 0.96, 1.0, 1.0),
+      new vec2(26.4, 2.3),
+      "SIM TELEMETRY: 118C  |  142 PSI  |  FLOW: 18%",
+      36,
+      new vec4(0.50, 0.96, 1.0, 1.0),
       true,
-      new vec4(0.04, 0.11, 0.16, 0.82)
+      new vec4(0.04, 0.11, 0.17, 0.92)
     )
 
     // 3. Subsystem Hotspot Selector Row (3 UIKit Buttons)
     this.btnValve = this.createUIButton(
       root,
       "BtnHotspotValve",
-      new vec3(-8.6, 9.3, 0.65),
+      new vec3(-8.6, 9.3, 0.95),
       new vec3(8.0, 3.4, 1.2),
       "CV-101 VALVE",
       31,
@@ -178,7 +179,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnRegulator = this.createUIButton(
       root,
       "BtnHotspotRegulator",
-      new vec3(0.0, 9.3, 0.65),
+      new vec3(0.0, 9.3, 0.95),
       new vec3(8.0, 3.4, 1.2),
       "PR-204 REG",
       31,
@@ -191,7 +192,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnRelay = this.createUIButton(
       root,
       "BtnHotspotRelay",
-      new vec3(8.6, 9.3, 0.65),
+      new vec3(8.6, 9.3, 0.95),
       new vec3(8.0, 3.4, 1.2),
       "TR-309 RELAY",
       31,
@@ -206,23 +207,24 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       root,
       "ComponentTitleText",
       new vec3(0, 6.0, 0.15),
-      new vec2(26.2, 2.3),
+      new vec2(26.4, 2.3),
       "[TR-309] CRITICAL: CORE OVERHEAT (118C)",
-      37,
+      38,
       new vec4(1.0, 0.42, 0.42, 1.0),
       true,
-      new vec4(0.14, 0.05, 0.06, 0.84)
+      new vec4(0.15, 0.05, 0.06, 0.92)
     )
 
     this.rootCauseText = this.createTextLabel(
       root,
       "RootCauseText",
       new vec3(0, 3.4, 0.1),
-      new vec2(26.0, 3.0),
-      "Thermal latch tripped due to pressure-starved coolant jacket.",
-      30,
-      new vec4(0.90, 0.96, 1.0, 1.0),
-      false
+      new vec2(26.2, 2.8),
+      "Simulated thermal latch tripped due to coolant starvation.",
+      32,
+      new vec4(0.92, 0.97, 1.0, 1.0),
+      true,
+      new vec4(0.04, 0.08, 0.14, 0.88)
     )
 
     // 5. Guided 4-Step Repair Card Section
@@ -230,34 +232,36 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       root,
       "StepHeaderText",
       new vec3(0, 0.6, 0.15),
-      new vec2(26.2, 2.4),
+      new vec2(26.4, 2.4),
       "STEP 1/4: LOCKOUT ISOLATION VALVE",
-      39,
+      40,
       new vec4(1.0, 0.88, 0.36, 1.0),
       true,
-      new vec4(0.10, 0.10, 0.04, 0.85)
+      new vec4(0.12, 0.10, 0.03, 0.92)
     )
 
     this.stepInstructionText = this.createTextLabel(
       root,
       "StepInstructionText",
       new vec3(0, -2.1, 0.1),
-      new vec2(26.0, 3.2),
+      new vec2(26.2, 3.0),
       "Pinch 3D CV-101 Valve or EXECUTE button to rotate valve 90 deg and apply LOTO clasp.",
-      31,
+      32,
       new vec4(1.0, 1.0, 1.0, 1.0),
-      false
+      true,
+      new vec4(0.04, 0.08, 0.14, 0.88)
     )
 
     this.safetyWarningText = this.createTextLabel(
       root,
       "SafetyWarningText",
       new vec3(0, -4.8, 0.1),
-      new vec2(26.0, 2.2),
+      new vec2(26.2, 2.1),
       "SAFETY: Verify LOTO tag & hand clearance on intake wheel.",
-      27,
-      new vec4(1.0, 0.76, 0.32, 1.0),
-      false
+      29,
+      new vec4(1.0, 0.78, 0.34, 1.0),
+      true,
+      new vec4(0.12, 0.08, 0.03, 0.88)
     )
 
     // 6. 4-Step Visual Checklist Strip + Progress Bar + Counter
@@ -265,12 +269,12 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       root,
       "StepChecklistStripText",
       new vec3(0, -7.1, 0.15),
-      new vec2(26.2, 2.0),
+      new vec2(26.4, 2.0),
       "[1:LOTO ..]   [2:PURGE ..]   [3:RESEAT ..]   [4:FLOW ..]",
-      28,
-      new vec4(0.75, 0.92, 1.0, 1.0),
+      30,
+      new vec4(0.78, 0.95, 1.0, 1.0),
       true,
-      new vec4(0.05, 0.10, 0.16, 0.82)
+      new vec4(0.04, 0.10, 0.16, 0.92)
     )
 
     const progObj = global.scene.createSceneObject("RepairProgressBar")
@@ -297,8 +301,8 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnPrimaryAction = this.createUIButton(
       root,
       "BtnPrimaryAction",
-      new vec3(0, -12.4, 0.25),
-      new vec3(25.2, 3.9, 1.2),
+      new vec3(0, -12.3, 0.75),
+      new vec3(25.0, 3.6, 1.0),
       "SCAN EQUIPMENT TELEMETRY",
       37,
       "Primary",
@@ -315,7 +319,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnPrev = this.createUIButton(
       root,
       "BtnPrevStep",
-      new vec3(-8.6, -16.2, 0.65),
+      new vec3(-8.6, -16.3, 1.15),
       new vec3(8.0, 3.4, 1.2),
       "< PREV STEP",
       30,
@@ -328,7 +332,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnNext = this.createUIButton(
       root,
       "BtnNextStep",
-      new vec3(0.0, -16.2, 0.65),
+      new vec3(0.0, -16.3, 1.15),
       new vec3(8.0, 3.4, 1.2),
       "NEXT STEP >",
       30,
@@ -341,7 +345,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnReset = this.createUIButton(
       root,
       "BtnResetUnit",
-      new vec3(8.6, -16.2, 0.65),
+      new vec3(8.6, -16.3, 1.15),
       new vec3(8.0, 3.4, 1.2),
       "RESET UNIT",
       30,
@@ -361,49 +365,49 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.calloutHeaderText = this.createTextLabel(
       calloutsRoot,
       "CalloutUnitHeader",
-      new vec3(0, 14.2, 0.5),
-      new vec2(22.0, 2.4),
+      new vec3(0, 14.5, 0.5),
+      new vec2(23.5, 2.5),
       "UNIT #04: READY FOR SPATIAL SCAN",
-      34,
-      new vec4(0.55, 0.94, 1.0, 1.0),
+      36,
+      new vec4(0.55, 0.96, 1.0, 1.0),
       true,
-      new vec4(0.04, 0.09, 0.16, 0.88)
+      new vec4(0.04, 0.09, 0.16, 0.94)
     )
 
     this.calloutRegulatorText = this.createTextLabel(
       calloutsRoot,
       "CalloutRegulatorBadge",
-      new vec3(1.6, 11.4, 1.0),
-      new vec2(16.5, 2.2),
+      new vec3(1.6, 11.5, 1.0),
+      new vec2(18.0, 2.3),
       "PR-204: 142 PSI [OVER-PRESSURE]",
-      30,
-      new vec4(1.0, 0.78, 0.28, 1.0),
+      33,
+      new vec4(1.0, 0.80, 0.28, 1.0),
       true,
-      new vec4(0.14, 0.09, 0.03, 0.88)
+      new vec4(0.14, 0.09, 0.03, 0.94)
     )
 
     this.calloutValveText = this.createTextLabel(
       calloutsRoot,
       "CalloutValveBadge",
-      new vec3(-8.2, -5.8, 1.2),
-      new vec2(14.5, 2.2),
+      new vec3(-8.4, -5.9, 1.2),
+      new vec2(15.8, 2.3),
       "CV-101: 18% FLOW [WARN]",
-      30,
-      new vec4(1.0, 0.78, 0.28, 1.0),
+      33,
+      new vec4(1.0, 0.80, 0.28, 1.0),
       true,
-      new vec4(0.14, 0.09, 0.03, 0.88)
+      new vec4(0.14, 0.09, 0.03, 0.94)
     )
 
     this.calloutRelayText = this.createTextLabel(
       calloutsRoot,
       "CalloutRelayBadge",
-      new vec3(8.2, -5.8, 1.2),
-      new vec2(14.5, 2.2),
+      new vec3(8.4, -5.9, 1.2),
+      new vec2(15.8, 2.3),
       "TR-309: 118C [OVERHEAT]",
-      30,
-      new vec4(1.0, 0.38, 0.38, 1.0),
+      33,
+      new vec4(1.0, 0.40, 0.40, 1.0),
       true,
-      new vec4(0.16, 0.04, 0.05, 0.88)
+      new vec4(0.16, 0.04, 0.05, 0.94)
     )
   }
 
@@ -526,9 +530,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
 
     // 2. Live Telemetry Bar
     if (this.telemetryBarText) {
-      const flowStatus = snapshot.phase === "COMPLETED" ? "NOMINAL" : "ACTIVE"
+      const flowStatus = snapshot.phase === "COMPLETED" ? "NOMINAL" : "SIMULATED"
       this.telemetryBarText.text =
-        `TEMP: ${snapshot.systemTempC}C  |  PSI: ${snapshot.systemPressurePsi}  |  FLOW: ${snapshot.coolantFlowPct}% (${flowStatus})`
+        `SIM TELEMETRY: ${snapshot.systemTempC}C  |  ${snapshot.systemPressurePsi} PSI  |  FLOW: ${snapshot.coolantFlowPct}% (${flowStatus})`
       this.telemetryBarText.textFill.color =
         snapshot.phase === "COMPLETED"
           ? new vec4(0.32, 0.98, 0.58, 1.0)
@@ -547,20 +551,38 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       (comp.id === "valve" && snapshot.completedSteps[0] && snapshot.completedSteps[3]) ||
       (comp.id === "regulator" && snapshot.completedSteps[1]) ||
       (comp.id === "relay" && snapshot.completedSteps[2])
+    const valveLockedOutMidRepair =
+      comp.id === "valve" && snapshot.completedSteps[0] && !snapshot.completedSteps[3]
 
     if (this.componentTitleText) {
-      const statusText = compRepaired ? comp.nominalStatusLabel : comp.faultStatusLabel
+      const statusText = compRepaired
+        ? comp.nominalStatusLabel
+        : valveLockedOutMidRepair
+          ? "LOTO ISOLATED: INTAKE LOCKED (0% FLOW)"
+          : comp.faultStatusLabel
       this.componentTitleText.text = `[${comp.subsystemCode}] ${statusText}`
       this.componentTitleText.textFill.color = compRepaired
         ? new vec4(0.32, 0.98, 0.58, 1.0)
-        : this.severityColor(comp.initialSeverity)
+        : valveLockedOutMidRepair
+          ? new vec4(0.45, 0.96, 1.0, 1.0)
+          : this.severityColor(comp.initialSeverity)
     }
 
     if (this.rootCauseText) {
-      this.rootCauseText.text =
-        snapshot.phase === "READY_TO_SCAN"
-          ? "Pinch [SCAN EQUIPMENT TELEMETRY] or any 3D hotspot on the pump unit to localize faults."
-          : `${comp.rootCause}`
+      if (snapshot.phase === "READY_TO_SCAN") {
+        this.rootCauseText.text =
+          "Training Standby: Pinch [SCAN EQUIPMENT TELEMETRY] or any 3D hotspot on Unit #04 to localize simulated faults."
+        this.rootCauseText.textFill.color = new vec4(0.90, 0.96, 1.0, 1.0)
+      } else if (compRepaired) {
+        this.rootCauseText.text = comp.repairedSummary
+        this.rootCauseText.textFill.color = new vec4(0.62, 1.0, 0.80, 1.0)
+      } else if (valveLockedOutMidRepair && comp.lockedOutSummary) {
+        this.rootCauseText.text = comp.lockedOutSummary
+        this.rootCauseText.textFill.color = new vec4(0.65, 0.96, 1.0, 1.0)
+      } else {
+        this.rootCauseText.text = comp.rootCause
+        this.rootCauseText.textFill.color = new vec4(0.92, 0.97, 1.0, 1.0)
+      }
     }
 
     // 5. Guided Step Instructions

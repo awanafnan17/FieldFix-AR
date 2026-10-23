@@ -2,16 +2,17 @@
 
 ## 1. Executive Summary
 
-- **Project Title:** FieldFix AR — Spatial Equipment Diagnostic & Guided Repair Assistant
-- **Competition:** Learn AR with SPECS (Devpost Hackathon — $1,250 First-Place Target)
+- **Project Title:** FieldFix AR — Hands-Free Spatial Maintenance Training Simulation
+- **Competition:** Learn AR with SPECS (Devpost Hackathon)
 - **Lens Studio Version:** `5.24.1.26100516` (macOS arm64)
 - **Target Device & Preview Mode:** `SPECS 27` (`Spectacles (2024)` / `SPECS`, `stereo`, `Interactive` Preview mode)
+- **Development Workflow:** **CLAD (Closed Loop Agentic Development, `ls-clad`)** + Official Lens Studio MCP Server + `Leaf.lspkg` v2.0.2
 - **Project File:** [`FieldFix-AR.esproj`](../FieldFix-AR.esproj)
 - **Verification Status:** **PASS**
   - `0` TypeScript compilation errors (`RecompileTypeScriptTool`)
-  - `100%` real SIK hand gameplay verified via `PreviewInteractTool` (`Pinch` & `Batch`) across all 3 3D equipment hotspots (`Hotspot_CoolantValve`, `Hotspot_PressureRegulator`, `Hotspot_ThermalRelayCore`) and all 7 `SpectaclesUIKit` buttons (`BtnHotspotValve`, `BtnHotspotRegulator`, `BtnHotspotRelay`, `BtnPrimaryAction`, `BtnPrevStep`, `BtnNextStep`, `BtnResetUnit`)
+  - Real SIK hand-pinch gameplay verified via `PreviewInteractTool` (`stepCount: 19, success: true`) across all 3 3D equipment hotspots (`Hotspot_CoolantValve`, `Hotspot_PressureRegulator`, `Hotspot_ThermalRelayCore`) and `SpectaclesUIKit` HUD controls (`BtnPrimaryAction`, `BtnPrevStep`, `BtnResetUnit`, `BtnHotspotValve`)
   - `3/3` automated LEAF v2.0.2 integration scenarios passing in live Preview (`FieldFixFullDiagnosticRepairScenario`, `FieldFixMidRepairShowcaseScenario`, `FieldFixResetAndReplayScenario`)
-  - `100.5s` (`1m 40.5s`) 1080p 30fps continuous motion demonstration video (`devpost/FieldFix-AR-Demo.mp4`) assembled from real 60fps Lens Studio window screen recordings
+  - `103.8s` (`1m 43.8s`) 1080p 30fps continuous motion demonstration video (`devpost/FieldFix-AR-Demo.mp4`) reframed so the enlarged live SPECS 27 AR viewport occupies ~75–85% of visual attention during gameplay chapters
 
 ---
 
@@ -19,91 +20,67 @@
 
 To distinguish **real user interaction** from test scripts that call internal TypeScript methods directly, we wired `AiPreviewAgentInspect.lspkg` (`AgentInspectScript`) and `AiPreviewAgentInteract.lspkg` (`AgentInteractScript`) into the live scene (`AiPreviewAgent Handler`) and drove the Spectacles Interaction Kit (`SIK`) puppet hand in `Preview 1` via `PreviewInteractTool`.
 
-### 2.1 Real Gameplay Defect Discovered & Fixed During Audit
-- **Defect Found Only via `PreviewInteractTool` (Missed by LEAF):**
-  - When targeting the secondary UIKit buttons (`BtnHotspotValve`, `BtnPrevStep`, `BtnNextStep`, `BtnResetUnit`) with real SIK hand raycasts in `Preview 1`, `PreviewInteractTool` timed out waiting for `onTriggerStart`, even though `BtnPrimaryAction` succeeded.
-  - **Root Cause Identified via `QueryRuntimeSceneTool`:**
-    1. `DiagnosticUIRoot` (`Frame`) had its own root `Interactable` and `Billboard` components enabled by default even though `frame.allowTranslation = false` and `frame.allowScaling = false`.
-    2. `DiagnosticPanelContent` was at `z = +0.3 cm` and secondary buttons were at `z = +0.15 cm` (`+0.45 cm` total), placing their colliders inside the `Frame`'s own `0.5 cm` border collider, and `Billboard`'s 6° yaw tilt rotated the left button column (`x = -8.6`) behind `BtnPrimaryAction`'s wide collider (`width = 25.2`).
-  - **Fix Applied in [`FieldFixDiagnosticUI.ts`](../Assets/Scripts/FieldFixDiagnosticUI.ts#L85-L118):**
-    - Disabled `Frame`'s root `Interactable`, `InteractableManipulation`, and `Billboard` components on `DiagnosticUIRoot` (since the HUD is world-anchored and stationary), moved `DiagnosticPanelContent` to `z = +0.8 cm` (per `specs-build-ui` z-fighting rule), and raised child button Z-offsets to `+0.65 cm` (`worldPosition.z = -108.87 cm`).
-  - **Post-Fix Verification:** `PreviewInteractTool(action: "Batch")` succeeded across all UIKit buttons and 3D hotspots (`stepCount: 17, success: true`).
+### 2.1 Issues Discovered & Fixed During Real Preview Audit
+1. **UIKit Secondary Button Raycast Occlusion (Found via `PreviewInteractTool`):**
+   - **Symptom:** When targeting secondary UIKit buttons (`BtnHotspotValve`, `BtnPrevStep`, `BtnResetUnit`) with real SIK hand raycasts in `Preview 1`, `PreviewInteractTool` initially timed out waiting for `onTriggerStart`.
+   - **Root Cause (`QueryRuntimeSceneTool`):** `DiagnosticUIRoot` (`Frame`) had its own root `Interactable` and `Billboard` components enabled by default even though `frame.allowTranslation = false` and `frame.allowScaling = false`, and child button Z-offsets needed additional forward clearance in front of `DiagnosticPanelContent`.
+   - **Fix Applied in [`FieldFixDiagnosticUI.ts`](../Assets/Scripts/FieldFixDiagnosticUI.ts):** Disabled `Frame`'s root `Interactable`, `InteractableManipulation`, and `Billboard` components on `DiagnosticUIRoot`, placed `DiagnosticPanelContent` at `z = +0.8 cm`, and set button Z-offsets (`+0.75 cm` to `+1.15 cm`) for reliable SIK raycast targeting.
+2. **3D Pressure Regulator (`PR-204`) Gauge Needle Direction:**
+   - **Symptom:** In right-handed `+Z` local space, a negative Z-Euler angle rotates clockwise (right) and a positive Z-Euler angle rotates counter-clockwise (left). Initially, `PR-204` started at `-48°` (pointing right toward the green marker) and swept to `+38°` (pointing left toward the red marker) after purging.
+   - **Fix Applied in [`FieldFixEquipmentMesh.ts`](../Assets/Scripts/FieldFixEquipmentMesh.ts):** Inverted `currentGaugeAngleDeg` / `targetGaugeAngleDeg` so the needle starts at `+48°` (pointing up-left at the red danger marker during the `142 PSI` over-pressure fault) and sweeps cleanly to `-38°` (pointing up-right at the green nominal marker when purged to `38–45 PSI`).
+3. **Post-Repair Component Summary Coherence:**
+   - **Symptom:** When all 4 repair steps were completed (`SYSTEM NOMINAL - REPAIR VERIFIED`), the component title updated to `NOMINAL`, but the descriptive line below it still displayed the initial fault root-cause string.
+   - **Fix Applied in [`FieldFixState.ts`](../Assets/Scripts/FieldFixState.ts) & [`FieldFixDiagnosticUI.ts`](../Assets/Scripts/FieldFixDiagnosticUI.ts):** Added `lockedOutSummary` and `repairedSummary` fields to `ComponentDiagnosticInfo` so selecting any component while locked out (`CV-101` after Step 1) or repaired (`CV-101`, `PR-204`, `TR-309` after completion) displays an accurate status summary.
+4. **Demo Video Framing (`devpost/FieldFix-AR-Demo.mp4`):**
+   - **Symptom:** The earlier split-screen video allocated roughly 50% of the screen to the full Lens Studio editor throughout the entire runtime, making the 3D machine and HUD text small at 1080p.
+   - **Fix Applied in [`devpost/build_demo_video.py`](./build_demo_video.py):** Reframed Chapters 1–4 and 6 (`0–80s` and `95–104s`) into an enlarged **Hero AR Mode** (`1380×844` tightly cropped SPECS 27 AR viewport + `468×844` visual key card = ~75–85% visual focus on the AR experience), showing the full Lens Studio 5.24.1 editor only during Chapter 5 (`80–95s`) to demonstrate step navigation, reset, LEAF testing, and CLAD + MCP workflow.
 
-### 2.2 Runtime Scene Interactable Discovery (`QueryRuntimeSceneTool`)
-All 10 user-facing `Interactable` targets verified in `Preview 1`:
-- **3D Equipment Hotspots (`EquipmentUnitRoot` at `x = -12, y = -3, z = -110`):**
-  - `Hotspot_CoolantValve` (`worldPosition: {-17.46, -2.77, -104.33}`)
-  - `Hotspot_PressureRegulator` (`worldPosition: {-11.89, 1.17, -105.88}`)
-  - `Hotspot_ThermalRelayCore` (`worldPosition: {-6.43, -2.56, -107.82}`)
-- **SpectaclesUIKit HUD Buttons (`DiagnosticUIRoot` at `x = +11.5, y = +0.5, z = -110`):**
-  - `BtnHotspotValve` (`worldPosition: {4.79, 7.75, -108.87}`)
-  - `BtnHotspotRegulator` (`worldPosition: {11.50, 7.75, -108.87}`)
-  - `BtnHotspotRelay` (`worldPosition: {18.21, 7.75, -108.87}`)
-  - `BtnPrimaryAction` (`worldPosition: {11.50, -9.17, -109.18}`)
-  - `BtnPrevStep` (`worldPosition: {4.79, -12.14, -108.87}`)
-  - `BtnNextStep` (`worldPosition: {11.50, -12.14, -108.87}`)
-  - `BtnResetUnit` (`worldPosition: {18.21, -12.14, -108.87}`)
-
-### 2.3 Verified Live SIK Hand Gameplay Log Trace (`RunAndCollectLogsTool`)
-Executed via `PreviewInteractTool(action: "Batch")` driving the right-hand SIK cursor across both 3D equipment hotspots and 2D UIKit buttons:
-```text
-I 15:55:34.462 [Preview 1] [Assets/Scripts/FieldFixMain.ts:174] [FieldFixAR] ScanStarted | duration=0.75s
-I 15:55:35.113 [Preview 1] [Assets/Scripts/FieldFixMain.ts:66] [FieldFixAR] ScanComplete | phase=DIAGNOSING | hotspot=relay | step=1/4
-I 15:55:38.729 [Preview 1] [Assets/Scripts/FieldFixMain.ts:183] [FieldFixAR] HotspotSelected | hotspot=valve | code=CV-101 | step=1/4
-I 15:55:42.209 [Preview 1] [Assets/Scripts/FieldFixMain.ts:152] [FieldFixAR] Direct3DHotspotAction | hotspot=valve | step=1/4
-I 15:55:42.256 [Preview 1] [Assets/Scripts/FieldFixMain.ts:220] [FieldFixAR] StepConfirmed | executedStep=1 | completed=1/4 | phase=REPAIRING | temp=104C | psi=128 | flow=0%
-I 15:55:46.095 [Preview 1] [Assets/Scripts/FieldFixMain.ts:152] [FieldFixAR] Direct3DHotspotAction | hotspot=regulator | step=2/4
-I 15:55:46.142 [Preview 1] [Assets/Scripts/FieldFixMain.ts:220] [FieldFixAR] StepConfirmed | executedStep=2 | completed=2/4 | phase=REPAIRING | temp=82C | psi=38 | flow=0%
-I 15:55:50.021 [Preview 1] [Assets/Scripts/FieldFixMain.ts:220] [FieldFixAR] StepConfirmed | executedStep=3 | completed=3/4 | phase=REPAIRING | temp=46C | psi=38 | flow=0%
-I 15:55:53.877 [Preview 1] [Assets/Scripts/FieldFixMain.ts:152] [FieldFixAR] Direct3DHotspotAction | hotspot=valve | step=4/4
-I 15:55:53.924 [Preview 1] [Assets/Scripts/FieldFixMain.ts:220] [FieldFixAR] StepConfirmed | executedStep=4 | completed=4/4 | phase=COMPLETED | temp=42C | psi=45 | flow=100%
-I 15:55:58.064 [Preview 1] [Assets/Scripts/FieldFixMain.ts:205] [FieldFixAR] StepNavigated(Prev) | step=3/4 | target=relay
-I 15:56:01.690 [Preview 1] [Assets/Scripts/FieldFixMain.ts:194] [FieldFixAR] StepNavigated(Next) | step=4/4 | target=valve
-I 15:56:05.277 [Preview 1] [Assets/Scripts/FieldFixMain.ts:231] [FieldFixAR] Reset | phase=READY_TO_SCAN | completed=0/4
-```
+### 2.2 Verified Live SIK Hand Gameplay Execution
+Executed via `PreviewInteractTool(action: "Batch", stepCount: 19)` driving the right-hand SIK cursor across both 3D equipment hotspots and 2D UIKit buttons (`{"action":"Batch","handState":{"left":{"status":"free"},"right":{"status":"free"}},"stepCount":19,"success":true}`):
+1. `Pinch` `BtnPrimaryAction` (`SCAN EQUIPMENT TELEMETRY`) -> triggers 3D laser sweep and transitions to `DIAGNOSING` (`Step 1/4`).
+2. `Pinch` `Hotspot_CoolantValve` (`CV-101`) -> focuses `CV-101` fault details.
+3. `Pinch` `Hotspot_CoolantValve` (`CV-101`) -> executes **Step 1/4** (`1/4 DONE`, rotates 3D valve wheel `90°`, snaps on red 3D simulated `LotoSafetyClasp`, halts pipe flow rings at `0%`).
+4. `Pinch` `Hotspot_PressureRegulator` (`PR-204`) -> executes **Step 2/4** (`2/4 DONE`, sweeps 3D gauge needle from red left `142 PSI` to green right `38 PSI`, cools simulated temp to `82°C`).
+5. `Pinch` `Hotspot_ThermalRelayCore` (`TR-309`) -> executes **Step 3/4** (`3/4 DONE`, retracts 3D relay plunger, cools simulated core to `46°C`).
+6. `Pinch` `Hotspot_CoolantValve` (`CV-101`) -> executes **Step 4/4** (`4/4 DONE`, removes simulated LOTO clasp, restores `100%` emerald pipe flow rings, sets `SYSTEM NOMINAL - REPAIR VERIFIED`).
+7. `Pinch` `BtnPrevStep` (`< PREV STEP`) -> navigates backward to review completed steps.
+8. `Pinch` `BtnResetUnit` (`RESET UNIT`) -> resets the simulation to `READY_TO_SCAN` (`0/4 DONE`, `116°C`, `140 PSI`).
+9. `Pinch` `BtnHotspotValve` (`CV-101 VALVE`) -> selects `CV-101` on the UIKit HUD.
 
 ---
 
-## 3. First-Place Competitive Assessment & 3 High-Impact Upgrades
+## 3. Realistic Competitive Assessment Against Official Judging Criteria
 
-### 3.1 Critical Scorecard (1–10) Against Official Learn AR with SPECS Judging Criteria
+Rather than claiming inflated near-perfect scores, the table below provides a candid, evidence-based assessment of FieldFix AR's competitive strengths and honest trade-offs as a self-contained hackathon submission:
 
-| Criterion | Pre-Audit Score | Post-Audit Score | Evidence of Improvement |
-| :--- | :---: | :---: | :--- |
-| **Design** | 8.2 / 10 | **9.6 / 10** | De-occluded floating 3D callout badges (`CalloutUnitHeader` at `y=14.2`, `CalloutRegulatorBadge` at `y=11.4`), removed `Billboard` yaw-tilt distortion on the stationary `Frame`, added the 4-step visual checklist strip (`[1:LOTO OK] [2:PURGE OK] [3:RESEAT OK] [4:FLOW OK]`), and added a 3D bobbing `ActiveStepTargetChevron` directly above the active subsystem. |
-| **Technical Implementation** | 8.4 / 10 | **9.7 / 10** | Fixed real SIK raycast z-clearance on all 7 UIKit buttons, implemented direct 3D physical hotspot step execution (`handle3DHotspotPinch`), procedural 3D `LotoSafetyClasp`, animated `CoolantFlowPulseRing_0..2` along the manifold pipe, and verified both via `PreviewInteractTool` and 3 LEAF scenarios. |
-| **Innovation & Originality** | 8.0 / 10 | **9.5 / 10** | Transformed the 3D machine from a passive selection target into a **directly operable spatial twin**: pinching a focused 3D hotspot physically actuates that repair step on the 3D assembly (snapping on the red LOTO clasp, halting/restoring animated pipe flow rings, sweeping the gauge needle, reseating the relay core). |
-| **Presentation** | 6.5 / 10 | **9.6 / 10** | Replaced the 66-second static screenshot slideshow with a **100.5-second 1080p 30fps continuous motion video (`3,015 frames`)** built directly from 60fps Lens Studio window recordings showing both a 1:1 zoomed live `Preview 1` AR viewport and the full Lens Studio 5.24.1 editor in real time. |
-| **Overall Competitive Average** | **7.78 / 10** | **9.60 / 10** | Ready for first-place contention. |
-
-### 3.2 Three Weaknesses Identified & Resolved
-1. **Weakness 1 (Presentation): Previous Demo Video Was a Static Screenshot Slideshow (66s)**
-   - **Resolution:** Recorded 4 continuous 60fps native macOS window captures of Lens Studio (`raw_sik_full_journey_with_nav_and_reset.mov`, `raw_live_gameplay.mov`, `raw_live_gameplay_continuous.mov`, `raw_leaf_reset_replay.mov`) using `/usr/sbin/screencapture -V ... -l 24323` and built a **100.5-second 1080p 30fps continuous motion demonstration video** (`devpost/FieldFix-AR-Demo.mp4`).
-2. **Weakness 2 (Originality / Spatial Interaction): 3D Hotspots Only Focused the UI; Repair Execution Required Pressing the 2D HUD Button**
-   - **Resolution:** Upgraded [`FieldFixMain.ts`](../Assets/Scripts/FieldFixMain.ts#L140-L162) (`handle3DHotspotPinch`) and [`FieldFixEquipmentMesh.ts`](../Assets/Scripts/FieldFixEquipmentMesh.ts) so pinching the active 3D subsystem hotspot directly executes/confirms that physical repair step on the 3D machine, complete with a 3D bobbing `ActiveStepTargetChevron`, 3D `LotoSafetyClasp` on `CV-101`, and 3 animated `CoolantFlowPulseRing` meshes along the manifold pipe.
-3. **Weakness 3 (Design & Real Gameplay Ergonomics): Secondary UIKit Buttons Were Blocked by Frame Border Collider & Callouts Overlapped Beacon**
-   - **Resolution:** Fixed `DiagnosticUIRoot` collider/z-offset hierarchy in [`FieldFixDiagnosticUI.ts`](../Assets/Scripts/FieldFixDiagnosticUI.ts) so all 7 UIKit buttons respond reliably to SIK hand pinches, repositioned 3D spatial callouts to eliminate overlap with the overhead status beacon, and added `StepChecklistStripText`.
+| Criterion | Realistic Score | Key Strengths | Honest Limitations / Trade-Offs |
+| :--- | :---: | :--- | :--- |
+| **Design** | **8.7 / 10** | Side-by-side spatial layout (`3D machine` on left, stationary `UIKit Frame` on right) keeps the central workspace clear; high-contrast text with dark backing pills (`alpha 0.88–0.94`) respects SPECS additive waveguide rules; coherent dynamic status text across Standby, LOTO, and Completed states. | Uses procedural geometric primitives (`MeshBuilder` cylinders, boxes, lathes, and vertex colors) rather than photorealistic textured CAD/GLB models, trading visual realism for 100% offline reproducibility and zero external asset dependencies. |
+| **Technical Implementation** | **8.9 / 10** | Clean Channel-A separation (`FieldFixState.ts`, `FieldFixEquipmentMesh.ts`, `FieldFixDiagnosticUI.ts`, `FieldFixAudioController.ts`, `FieldFixMain.ts`); dual-modality interaction (direct 3D SIK `Interactable` hotspots + 2D `SpectaclesUIKit` buttons); verified via both live `PreviewInteractTool` SIK hand batches and 3 automated `LEAF` scenarios with zero compiler/runtime errors. | Telemetry (`Temperature`, `Pressure`, `Flow`) and fault states are deterministic software simulations rather than live external IoT/MQTT streams or computer-vision object tracking. |
+| **Innovation & Originality** | **8.6 / 10** | Goes beyond floating 2D checklists by turning the 3D equipment twin into a directly operable spatial interface: pinching a 3D valve, regulator, or relay physically actuates that component in 3D space (rotating the wheel, snapping on a simulated 3D LOTO clasp, halting/restoring pipe flow rings, sweeping the gauge needle, retracting the relay plunger). | Focused on a single structured 4-step maintenance training scenario (`Cryo-Coolant Pump & Relay Unit #04`) rather than a multi-machine authoring platform. |
+| **Presentation** | **8.9 / 10** | Reframed `103.8s` 1080p 30fps continuous motion video (`devpost/FieldFix-AR-Demo.mp4`) dedicates ~75–85% of visual focus to the enlarged live SPECS 27 AR viewport during gameplay, uses plain-English captions and visual summary cards for non-technical judges, and clearly frames the project as a maintenance training simulation. | Captured in the Lens Studio 5.24.1 `SPECS 27` interactive simulator preview rather than through-the-lens optical hardware camera footage on physical Spectacles hardware. |
+| **Overall Assessment** | **8.78 / 10** | Strong, well-verified, rule-compliant entry in the **Learn & Assist** category with genuine spatial interaction and clear judge communication. | Clearly documented simulation boundaries ensure judges evaluate the project on its true merits. |
 
 ---
 
-## 4. Automated LEAF v2.0.2 Integration Test Suite (Re-Verified Post-Upgrade)
+## 4. Automated LEAF v2.0.2 Integration Test Suite (Re-Verified Post-Polish)
 
-All three automated scenarios in `Assets/Tests/` were re-executed sequentially against the upgraded codebase in `Preview 1`:
+All three automated scenarios in `Assets/Tests/` were re-executed against the polished codebase in `Preview 1`:
 
-1. **`FieldFixMidRepairShowcaseScenario`** ([FieldFixMidRepairShowcaseScenario.ts](../Assets/Tests/FieldFixMidRepairShowcaseScenario.ts)) — `PASSED`
-2. **`FieldFixFullDiagnosticRepairScenario`** ([FieldFixLeafScenario.ts](../Assets/Tests/FieldFixLeafScenario.ts)) — `PASSED`
-3. **`FieldFixResetAndReplayScenario`** ([FieldFixResetAndReplayScenario.ts](../Assets/Tests/FieldFixResetAndReplayScenario.ts)) — `PASSED` (`[ 0.985s][FieldFixResetAndReplayScenario] PASSED`)
+1. **`FieldFixMidRepairShowcaseScenario`** ([FieldFixMidRepairShowcaseScenario.ts](../Assets/Tests/FieldFixMidRepairShowcaseScenario.ts)) — `status: "succeeded"`
+2. **`FieldFixFullDiagnosticRepairScenario`** ([FieldFixLeafScenario.ts](../Assets/Tests/FieldFixLeafScenario.ts)) — `status: "succeeded"`
+3. **`FieldFixResetAndReplayScenario`** ([FieldFixResetAndReplayScenario.ts](../Assets/Tests/FieldFixResetAndReplayScenario.ts)) — `status: "succeeded"`
 
 ---
 
 ## 5. Captured Screenshot & Video Evidence Manifest
 
-All visual captures in `devpost/screenshots/` reflect the upgraded experience:
+All visual captures in `devpost/screenshots/` reflect the polished experience:
 
-1. [01_standby_ready_to_scan.png](./screenshots/01_standby_ready_to_scan.png) (`1392×1910`) — Standby state (`READY_TO_SCAN`) with de-occluded spatial callouts, 3D coolant flow rings, and 4-step checklist strip (`[1:LOTO >>] [2:PURGE ..] [3:RESEAT ..] [4:FLOW ..]`).
-2. [02a_step1_loto_valve_locked.png](./screenshots/02a_step1_loto_valve_locked.png) (`1392×1910`) — Step 1/4 verified via direct 3D hotspot pinch: red 3D `LotoSafetyClasp` engaged on `CV-101`, `0%` flow, `[1:LOTO OK]`, and 3D `ActiveStepTargetChevron` hovering over `PR-204`.
-3. [02_mid_repair_step3_of_4.png](./screenshots/02_mid_repair_step3_of_4.png) (`1392×1910`) — Step 2/4 verified (`[1:LOTO OK] [2:PURGE OK]`, `82°C | 38 PSI`), green halo on `PR-204`, and 3D target chevron hovering over `TR-309`.
-4. [03_completed_nominal_4_of_4.png](./screenshots/03_completed_nominal_4_of_4.png) (`1392×1910`) — All 4 repair steps completed (`42°C | 45 PSI | 100% FLOW | 4/4 DONE`), all emerald halos, rapid emerald coolant flow rings, and SIK hand cursor visible.
-5. [04_reset_and_replay_verified.png](./screenshots/04_reset_and_replay_verified.png) (`1392×1910`) — Post-reset state with `[ 0.985s][FieldFixResetAndReplayScenario] PASSED` banner.
+1. [01_standby_ready_to_scan.png](./screenshots/01_standby_ready_to_scan.png) (`1392×1910`) — Standby state (`READY_TO_SCAN`) with `"FIELDFIX AR // MAINTENANCE TRAINING SIMULATION"` header, `"SIM TELEMETRY: 116C | 140 PSI | FLOW: 18% (SIMULATED)"`, high-contrast backing pills, and gauge needle pointing up-left to the red danger marker.
+2. [02a_step1_loto_valve_locked.png](./screenshots/02a_step1_loto_valve_locked.png) (`892×1220`) — Step 1/4 verified via direct 3D hotspot pinch: red 3D `LotoSafetyClasp` engaged on `CV-101`, `0%` simulated flow, `[1:LOTO OK]`, and 3D `ActiveStepTargetChevron` hovering over `PR-204`.
+3. [02_mid_repair_step3_of_4.png](./screenshots/02_mid_repair_step3_of_4.png) (`1392×1910`) — Step 2/4 verified (`[1:LOTO OK] [2:PURGE OK]`, `82°C | 38 PSI`), gauge needle swept right to the green marker, green halo on `PR-204`, and 3D target chevron hovering over `TR-309`.
+4. [03_completed_nominal_4_of_4.png](./screenshots/03_completed_nominal_4_of_4.png) (`1392×1910`) — All 4 repair steps completed (`42°C | 45 PSI | 100% FLOW (NOMINAL) | 4/4 DONE`), coherent nominal component summary (`[TR-309] NOMINAL: CORE STABLE (42C)`), emerald halos, and rapid emerald coolant flow rings.
+5. [04_reset_and_replay_verified.png](./screenshots/04_reset_and_replay_verified.png) (`1392×1910`) — Post-reset state verified via `FieldFixResetAndReplayScenario`.
 6. [05_full_editor_with_preview.png](./screenshots/05_full_editor_with_preview.png) (`2272×1824`) — Full Lens Studio 5.24.1 window showing Scene Hierarchy, 3D Scene View (`19,720` triangles, `231` joints), `TypeScript compilation succeeded`, and `Preview 1` (`SPECS 27`).
-7. [FieldFix-AR-Demo.mp4](./FieldFix-AR-Demo.mp4) (`1920×1080`, 30fps H.264/AAC, `100.3s`) — Continuous motion demonstration video assembled from real 60fps Lens Studio window recordings and synchronized procedural WAV audio.
+7. [FieldFix-AR-Demo.mp4](./FieldFix-AR-Demo.mp4) (`1920×1080`, 30fps H.264/AAC, `103.8s`) — Reframed continuous motion demonstration video assembled from real 60fps Lens Studio window recordings and synchronized procedural WAV audio.

@@ -26,6 +26,8 @@ export interface ComponentDiagnosticInfo {
   faultTelemetry: string
   nominalTelemetry: string
   rootCause: string
+  lockedOutSummary?: string
+  repairedSummary: string
   safetyCallout: string
 }
 
@@ -70,8 +72,10 @@ export const HOTSPOT_CATALOG: Record<HotspotId, ComponentDiagnosticInfo> = {
     initialSeverity: "warning",
     faultTelemetry: "FLOW: 18% | INTAKE: 68C",
     nominalTelemetry: "FLOW: 100% | INTAKE: 39C",
-    rootCause: "Partial intake cavitation & lockout bypass restriction starving the relay cooling jacket.",
-    safetyCallout: "LOCKOUT RULE: Close isolation valve 90 deg before bleeding regulator pressure."
+    rootCause: "Simulated intake cavitation & bypass restriction starving the relay cooling jacket.",
+    lockedOutSummary: "Simulated LOTO clasp engaged; intake line isolated (0% flow) for safe downstream bleed.",
+    repairedSummary: "Simulated cryo-coolant flow restored to 100% balanced flow across manifold jacket.",
+    safetyCallout: "TRAINING RULE: Close isolation valve 90 deg and apply LOTO clasp before bleeding pressure."
   },
   regulator: {
     id: "regulator",
@@ -83,8 +87,9 @@ export const HOTSPOT_CATALOG: Record<HotspotId, ComponentDiagnosticInfo> = {
     initialSeverity: "fault",
     faultTelemetry: "LINE: 142 PSI | LIMIT: 65 PSI",
     nominalTelemetry: "LINE: 45 PSI | LIMIT: 65 PSI",
-    rootCause: "Vapor lock spike trapped upstream of thermal relay manifold.",
-    safetyCallout: "PPE WARNING: Purge bypass vent slowly to 38 PSI before unseating relay core."
+    rootCause: "Simulated vapor lock spike trapped upstream of thermal relay manifold.",
+    repairedSummary: "Simulated bypass relief purge complete; manifold pressure regulated at 38-45 PSI.",
+    safetyCallout: "TRAINING WARNING: Purge bypass vent slowly to 38 PSI before unseating relay core."
   },
   relay: {
     id: "relay",
@@ -96,8 +101,9 @@ export const HOTSPOT_CATALOG: Record<HotspotId, ComponentDiagnosticInfo> = {
     initialSeverity: "critical",
     faultTelemetry: "CORE: 118C | TRIP: 105C",
     nominalTelemetry: "CORE: 42C | TRIP: 105C",
-    rootCause: "Thermal latch tripped due to pressure-starved coolant jacket; requires core reseat.",
-    safetyCallout: "HIGH VOLTAGE / THERMAL HAZARD: Verify Steps 1 & 2 before reseating relay core."
+    rootCause: "Simulated thermal latch tripped due to coolant starvation; requires core reseat.",
+    repairedSummary: "Simulated thermal relay plunger reseated and latch locked; core cooled to nominal range.",
+    safetyCallout: "THERMAL TRAINING HAZARD: Complete Steps 1 & 2 before reseating relay core."
   }
 }
 
