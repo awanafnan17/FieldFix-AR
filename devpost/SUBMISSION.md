@@ -27,6 +27,9 @@ TECH STACK:
 • Procedural Runtime 3D Geometry via MeshBuilder + SimpleVertexBaseColor.lspkg
 • Procedural 44.1 kHz Spatial Audio via CLAD /build-sfx
 • Automated Integration Testing via LEAF (Leaf.lspkg v2.0.2)
+
+PUBLIC SOURCE REPOSITORY:
+https://github.com/awanafnan17/FieldFix-AR
 ```
 
 ---
@@ -38,6 +41,9 @@ TECH STACK:
 
 ### Elevator Pitch (Tagline)
 Step up to malfunctioning industrial machinery, pinch to scan live spatial fault telemetry directly on 3D components, and execute a 4-step hands-free repair by directly manipulating 3D subsystems with LOTO safety verification on Snap SPECS.
+
+### Public Code Repository URL (`Try it out` / GitHub Link)
+`https://github.com/awanafnan17/FieldFix-AR`
 
 ### Built With
 - `snap-specs`
