@@ -59,7 +59,7 @@ CHAPTERS = [
         "accent": (72, 225, 255),
         "voiceover": (
             "FieldFix A R is a hands-free spatial maintenance training simulation for Snap SPECS. "
-            "Instead of holding paper manuals, technicians interact directly with a three-D equipment twin and floating repair checklist."
+            "Instead of holding paper manuals, technicians interact directly with a three-D equipment twin and floating checklist."
         ),
         "sfx_events": [(0.6, "ButtonClick.wav", 0.50)],
     },
@@ -99,23 +99,23 @@ CHAPTERS = [
         "ss": 31.8,
         "src_dur": 6.0,
         "duration": 14.0,
-        "step_badge": "0:28 – 0:42   |   3. INDUSTRIAL LOTO SAFETY INTERLOCK & SMART REDIRECTION",
-        "title": "Out-of-Order Repair Attempts Trigger LOTO Safety Interlock & Auto-Redirect",
-        "caption_1": "Attempting to unseat the overheated TR-309 Relay Core (Step 3) before isolating CV-101 triggers an immediate Safety Interlock.",
-        "caption_2": "The 3D relay halo flashes red, an audio alert sounds, and the system automatically redirects the trainee back to Step 1/4 [CV-101].",
-        "card_tag": "ACTIVE SAFETY TRAINING",
+        "step_badge": "0:28 – 0:42   |   3. SIMULATED LOTO SAFETY INTERLOCK & SMART REDIRECTION",
+        "title": "Out-of-Order Repair Attempts Trigger Simulated LOTO Interlock & Redirect",
+        "caption_1": "Attempting to unseat the overheated TR-309 Relay Core (Step 3) before isolating CV-101 triggers the simulated Safety Interlock.",
+        "caption_2": "The 3D relay halo flashes red, an audio alert sounds, and the training simulation redirects focus to Step 1/4 [CV-101].",
+        "card_tag": "SIMULATED LOTO TRAINING",
         "card_title": "Sequential LOTO\nSafety Interlock",
         "card_items": [
-            ("UNSAFE ACTION BLOCKED", "Blocks unseating TR-309 while 142 PSI pressure is still trapped.", (255, 95, 95)),
+            ("UNSAFE ACTION BLOCKED", "Blocks unseating TR-309 while 142 PSI simulated pressure is trapped.", (255, 95, 95)),
             ("3D HAZARD FLASH", "Relay halo flashes crimson and plays a spatial hazard alert cue.", (255, 165, 65)),
             ("AUTO-REDIRECTION", "3D target chevron & checklist redirect automatically to Step 1 CV-101.", (72, 225, 255)),
-            ("COMPETENCY SCORING", "Tracks safety violations to grade trainee LOTO discipline at completion.", (85, 245, 155)),
+            ("COMPETENCY SCORING", "Tracks simulated violations to grade trainee LOTO sequence.", (85, 245, 155)),
         ],
-        "card_footer": "LOTO BLOCKED: COMPLETE STEP 1 [CV-101] FIRST!",
+        "card_footer": "SIMULATED LOTO BLOCKED: COMPLETE STEP 1 [CV-101] FIRST!",
         "accent": (255, 95, 95),
         "voiceover": (
             "If a trainee attempts to unseat the overheated relay core before isolating the intake valve, "
-            "the Lockout-Tagout Safety Interlock blocks the unsafe action, flashes a red hazard alert, and redirects focus to Step One."
+            "the simulated Lockout-Tagout Safety Interlock blocks the action, flashes a red hazard alert, and redirects to Step One."
         ),
         "sfx_events": [(1.5, "ButtonClick.wav", 0.65), (6.2, "FaultAlert.wav", 0.85)],
     },
@@ -142,8 +142,8 @@ CHAPTERS = [
         "card_footer": "PROGRESS: 2 / 4 STEPS VERIFIED  ([1:LOTO OK] [2:PURGE OK])",
         "accent": (255, 165, 60),
         "voiceover": (
-            "In Step One, pinching the three-D isolation valve rotates the yellow lever ninety degrees clockwise, snaps on a red Lockout clasp, and halts pipe flow. "
-            "In Step Two, pinching the three-D regulator bleeds trapped pressure from one-forty-two P-S-I down to thirty-eight P-S-I."
+            "In Step One, pinching the three-D valve rotates the yellow lever ninety degrees, snaps on a simulated Lockout clasp, and halts flow. "
+            "In Step Two, pinching the regulator bleeds pressure from one-forty-two to thirty-eight P-S-I."
         ),
         "sfx_events": [(1.8, "RepairStepConfirm.wav", 0.85), (8.2, "RepairStepConfirm.wav", 0.85)],
     },
@@ -170,7 +170,7 @@ CHAPTERS = [
         "card_footer": "PROGRESS: 3 / 4 STEPS VERIFIED  ([3:RESEAT OK])",
         "accent": (72, 225, 255),
         "voiceover": (
-            "With pressure safely bled, pinching the three-D thermal relay core in Step Three physically retracts the tripped plunger into its cooling sleeve, "
+            "With simulated pressure safely bled, pinching the three-D thermal relay core in Step Three retracts the tripped plunger into its cooling sleeve, "
             "dropping core temperature to forty-six Celsius."
         ),
         "sfx_events": [(2.6, "RepairStepConfirm.wav", 0.85)],
@@ -193,13 +193,13 @@ CHAPTERS = [
             ("TEMPERATURE", "118°C Overheat  -->  42°C Nominal (Relay Core Cooled)", (85, 245, 155)),
             ("MANIFOLD PRESSURE", "142 PSI Spike   -->  45 PSI Regulated (Gauge in Green Zone)", (85, 245, 155)),
             ("COOLANT FLOW", "18% Restricted  -->  100% Balanced Flow (Lever +90° Open)", (85, 245, 155)),
-            ("TRAINEE SCORECARD", "100% (A+ FLAWLESS LOTO) — All 4 steps verified in sequence.", (72, 225, 255)),
+            ("TRAINING SCORECARD", "100% (A+ FLAWLESS LOTO) — Simulated 4-step sequence verified.", (72, 225, 255)),
         ],
-        "card_footer": "SYSTEM NOMINAL — 100% (A+ FLAWLESS LOTO)",
+        "card_footer": "SIMULATION NOMINAL — 100% (A+ FLAWLESS LOTO)",
         "accent": (72, 245, 148),
         "voiceover": (
-            "In Step Four, pinching Valve CV-101 removes the lockout clasp, rotates the lever open, and restores one hundred percent balanced flow. "
-            "All three-D halos turn emerald green and award the trainee competency scorecard."
+            "In Step Four, pinching Valve CV-101 clears the simulated lockout clasp, rotates the lever open, and restores one hundred percent flow. "
+            "All three-D halos turn green and display the training scorecard."
         ),
         "sfx_events": [(2.0, "DiagnosticComplete.wav", 0.95)],
     },
@@ -226,8 +226,8 @@ CHAPTERS = [
         "card_footer": "COMPARE MODE: FAULT SNAPSHOT <-> VERIFIED NOMINAL",
         "accent": (72, 225, 255),
         "voiceover": (
-            "After completion, trainees can pinch Compare Before and After to toggle the entire three-D machine and telemetry "
-            "between the initial overheated fault snapshot and the verified nominal state."
+            "After completion, trainees can pinch Compare Before and After to toggle the three-D machine and simulated telemetry "
+            "between the initial fault snapshot and the verified nominal state."
         ),
         "sfx_events": [(1.2, "ButtonClick.wav", 0.70), (6.5, "ButtonClick.wav", 0.70), (10.5, "ButtonClick.wav", 0.65)],
     },
@@ -245,7 +245,7 @@ CHAPTERS = [
         "caption_2": "Developed using Closed Loop Agentic Development (CLAD), Lens Studio MCP, and 4 automated in-preview LEAF integration scenarios.",
         "accent": (72, 225, 255),
         "voiceover": (
-            "Built in Lens Studio five-point-twenty-four using Closed Loop Agentic Development and the Lens Studio M-C-P,"
+            "Built in Lens Studio five-point-twenty-four with Closed Loop Agentic Development and M-C-P,"
         ),
         "sfx_events": [(2.2, "ButtonClick.wav", 0.75)],
     },
@@ -263,7 +263,7 @@ CHAPTERS = [
         "caption_2": "Live in-preview execution confirms [FieldFixAdversarialSafetyAndXRayScenario] PASSED with zero TypeScript or runtime errors.",
         "accent": (72, 245, 148),
         "voiceover": (
-            "FieldFix A R is verified by four automated LEAF integration scenarios covering the full repair loop, X-Ray cutaway, and safety interlock."
+            "four automated LEAF scenarios verify the full repair loop, X-Ray cutaway, and safety interlock."
         ),
         "sfx_events": [(1.5, "ScanSweep.wav", 0.65), (4.8, "DiagnosticComplete.wav", 0.80)],
     },
@@ -290,7 +290,7 @@ CHAPTERS = [
         "card_footer": "GITHUB.COM/AWANAFNAN17/FIELDFIX-AR   |   MIT LICENSE",
         "accent": (72, 245, 148),
         "voiceover": (
-            "FieldFix A R: hands-free spatial diagnostics, interactive three-D repairs, and safety-first training built natively for Snap SPECS."
+            "FieldFix A R: hands-free spatial diagnostics, interactive three-D repairs, and procedural safety training built for Snap SPECS."
         ),
         "sfx_events": [(1.0, "DiagnosticComplete.wav", 0.90), (5.5, "RepairStepConfirm.wav", 0.65)],
     },
@@ -605,7 +605,7 @@ def build_master_audio(total_duration: float, out_wav: str):
         vo_text = ch.get("voiceover", "").strip()
         if vo_text:
             vo_wav_path = os.path.join(BUILD_DIR, f"vo_v3_{idx:02d}_{ch['id']}.wav")
-            vo_samples = synthesize_voiceover_wav(vo_text, vo_wav_path, rate=184)
+            vo_samples = synthesize_voiceover_wav(vo_text, vo_wav_path, rate=190)
             # Start voiceover 0.35s into each chapter, clamp to chapter duration - 0.25s
             max_vo_samples = int((ch["duration"] - 0.45) * sr)
             vo_start = int((t_cursor + 0.30) * sr)

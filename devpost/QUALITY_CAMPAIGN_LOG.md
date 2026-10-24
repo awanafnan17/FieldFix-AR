@@ -86,7 +86,7 @@
   - `raw_campaign_v3_full_journey.mov` (`45.03s`, `2910×2256`)
   - `raw_campaign_v3_part2.mov` (`27.63s`, `2910×2256`)
   - `raw_campaign_v3_leaf.mov` (`18.17s`, `2910×2256`)
-- Updated [`devpost/build_demo_video.py`](./build_demo_video.py) to render a 9-chapter, `120.0s` (`119.73s` muxed, `1920×1080`, `30fps`, `H.264/AAC`, `13,969,575` bytes) narrated demonstration video ([`devpost/FieldFix-AR-Demo.mp4`](./FieldFix-AR-Demo.mp4)) with:
+- Updated [`devpost/build_demo_video.py`](./build_demo_video.py) to render a 9-chapter, `120.0s` (`119.73s` muxed, `1920×1080`, `30fps`, `H.264/AAC`, `13,968,797` bytes, SHA-256: `c83644890658611ee9adb3f881fcda47a3a4e54b60ae0bc7e2f05a187d1f6d75`) narrated demonstration video ([`devpost/FieldFix-AR-Demo.mp4`](./FieldFix-AR-Demo.mp4)) with:
   - Enlarged `1380×844` Hero AR viewport showing all 9 UIKit HUD rows (`crop=900:550:1192:608` scaled to `1380×844`) alongside a `468×844` visual key card.
   - Spoken English voiceover narration synthesized offline via `/usr/bin/say -v Samantha -r 184` and sidechain-ducked over the ambient pad and 5 procedural WAV SFX cues.
   - Exact frame-verified chapter windows confirming 100% visual alignment between narration, captions, and live SPECS 27 AR gameplay.
