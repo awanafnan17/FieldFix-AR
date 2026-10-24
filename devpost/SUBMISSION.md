@@ -12,14 +12,16 @@ FieldFix AR is an interactive, hands-free industrial maintenance training simula
 Created for the "Learn AR with SPECS" Devpost Hackathon.
 
 CHAPTERS & SPATIAL AR CAPABILITIES DEMONSTRATED (2:00):
-• 0:00 — 1. The Problem, Solution & Spatial AR Concept: Technicians need both hands free during complex equipment maintenance. FieldFix AR anchors an articulated 3D Cryo-Coolant Pump & Relay Unit (#04) and a guided repair checklist side-by-side in world space (z = -110 cm).
+• 0:00 — 1A. Live AR Gameplay Highlight: Opens immediately in live SPECS AR action with exploded 3D X-Ray Cutaway sub-assemblies and direct SIK hand-pinch manipulation.
+• 0:05 — 1B. The Problem, Solution & Spatial AR Layout: Technicians need both hands free during complex equipment maintenance. FieldFix AR anchors an articulated 3D Cryo-Coolant Pump & Relay Unit (#04) and a guided repair checklist side-by-side in world space (z = -110 cm).
 • 0:12 — 2. Telemetry Scan & 3D X-Ray Cutaway Mode: A right-hand pinch sweeps a volumetric 3D laser ring across the assembly to localize three faults (CV-101 at 18% flow, PR-204 at 142 PSI, TR-309 at 118°C). Pinching [X-RAY CUTAWAY] explodes the internal cryo-seal gate, spring diaphragm, and copper stator windings out of their housings in 3D space.
-• 0:28 — 3. Sequential Industrial LOTO Safety Interlock: Attempting to unseat the overheated TR-309 Relay Core (Step 3) before locking out the intake valve (Step 1) triggers a 3D red hazard flash, audible warning, and automatic safety redirect to CV-101.
+• 0:28 — 3. Sequential Industrial LOTO Safety Interlock (Logs Violation #1): Attempting to unseat the overheated TR-309 Relay Core (Step 3) before locking out the intake valve (Step 1) triggers a 3D red hazard flash, audible warning, logs LOTO Violation #1 (-15% score penalty), and automatically redirects focus to CV-101.
 • 0:42 — 4. Steps 1 & 2: 3D Valve LOTO & Pressure Regulator Purge: Pinching the 3D CV-101 valve rotates the yellow-tipped lever handle 90° clockwise, snaps on a red 3D Lockout-Tagout (LOTO) safety clasp, and halts the manifold pipe flow rings (0%). Pinching the 3D PR-204 regulator vents trapped line pressure, sweeping the 3D gauge needle from red (142 PSI) into green (38 PSI).
 • 0:57 — 5. Step 3/4: 3D Thermal Relay Core Reseat: Pinching the 3D TR-309 relay retracts the tripped plunger into its collar, rotates the latch 45°, and cools the simulated core from 118°C to 46°C.
-• 1:10 — 6. Step 4/4: Re-Pressurization & Trainee Competency Scorecard: Pinching CV-101 clears the simulated LOTO clasp, rotates the lever open, restores 100% emerald coolant flow (42°C | 45 PSI | 100% Flow), and awards the Trainee Competency Scorecard (100% A+ FLAWLESS LOTO).
+• 1:10 — 6A. Run #1 Completion Scorecard (85% B+ Safety Redirected): Completing Step 4 on Run #1 restores 100% flow (42°C | 45 PSI) and awards 85% (B+ SAFETY REDIRECTED | LOTO Violations: 1), accurately reflecting the earlier out-of-order LOTO violation at 0:28.
+• 1:17 — 6B. Clean Attempt After Reset (Run #2 — 100% A+ Flawless LOTO): After resetting and executing all 4 steps in strict LOTO sequence with zero violations, completing Step 4 awards 100% (A+ FLAWLESS LOTO | LOTO Violations: 0).
 • 1:24 — 7. Before / After Spatial Comparison Mode: Toggling [COMPARE BEFORE/AFTER] dynamically animates the 3D machine, valve lever, gauge needle, and telemetry between Fault (118°C / 142 PSI / 18% Flow) and Nominal (42°C / 45 PSI / 100% Flow).
-• 1:38 — 8. Step Navigation, Reset & 4/4 Automated LEAF Verification: Demonstrates bidirectional review, one-pinch reset, and automated in-preview verification in Lens Studio 5.24.1 using CLAD, Lens Studio MCP, and LEAF (4/4 scenarios passed).
+• 1:38 — 8. Step Navigation, Reset & 4/4 Automated LEAF Verification: Demonstrates bidirectional review, one-pinch [RESET UNIT], and automated in-preview verification in Lens Studio 5.24.1 using CLAD, Lens Studio MCP, and LEAF (4/4 scenarios passed, 36/36 assertions).
 • 1:51 — 9. FieldFix AR — Completed Spatial Training Summary: Showcases verified nominal operation combined with 3D X-Ray Cutaway mode across all three subsystems.
 
 IMPORTANT SIMULATION NOTE:

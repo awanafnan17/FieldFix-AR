@@ -86,10 +86,11 @@
   - `raw_campaign_v3_full_journey.mov` (`45.03s`, `2910×2256`)
   - `raw_campaign_v3_part2.mov` (`27.63s`, `2910×2256`)
   - `raw_campaign_v3_leaf.mov` (`18.17s`, `2910×2256`)
-- Updated [`devpost/build_demo_video.py`](./build_demo_video.py) to render a 9-chapter, `120.0s` (`119.73s` muxed, `1920×1080`, `30fps`, `H.264/AAC`, `13,968,797` bytes, SHA-256: `c83644890658611ee9adb3f881fcda47a3a4e54b60ae0bc7e2f05a187d1f6d75`) narrated demonstration video ([`devpost/FieldFix-AR-Demo.mp4`](./FieldFix-AR-Demo.mp4)) with:
-  - Enlarged `1380×844` Hero AR viewport showing all 9 UIKit HUD rows (`crop=900:550:1192:608` scaled to `1380×844`) alongside a `468×844` visual key card.
-  - Spoken English voiceover narration synthesized offline via `/usr/bin/say -v Samantha -r 184` and sidechain-ducked over the ambient pad and 5 procedural WAV SFX cues.
-  - Exact frame-verified chapter windows confirming 100% visual alignment between narration, captions, and live SPECS 27 AR gameplay.
+- Updated [`devpost/build_demo_video.py`](./build_demo_video.py) to render a 12-segment, `120.0s` (`119.73s` muxed, `1920×1080`, `30fps`, `H.264/AAC`, `19,161,979` bytes, SHA-256: `7dfd46eafa6e2fdb77ef87cf9404ac354477b8b0db36fe678b7d4c4d5e6c95ce`) narrated demonstration video ([`devpost/FieldFix-AR-Demo.mp4`](./FieldFix-AR-Demo.mp4)) with:
+  - Immediate live AR gameplay hook (`0:00–0:05.5`) followed by spatial architecture (`0:05.5–0:12.0`).
+  - Dual-AR Viewport layout (`1416×852` Main AR Viewport on the left + synchronized `454×448` `2.3x` Live 3D Equipment Zoom Viewport on the top right + compact 3-pill summary card on the bottom right).
+  - Both Run 1 completion (`85% B+ SAFETY REDIRECTED | LOTO Violations: 1` at `1:10–1:17` matching the `0:28` violation) and Run 2 clean attempt after Reset (`100% A+ FLAWLESS LOTO | LOTO Violations: 0` at `1:17–1:24`).
+  - Zero blank frames verified at `t=0.000s` on all 12 segments (`mean_luma` `90.3–94.2`) and zero-clipping spoken English voiceover narration (`/usr/bin/say -v Samantha -r 184`) sidechain-ducked over the ambient pad and 5 procedural WAV SFX cues.
 
 ### Milestone 6 — Post-Integration Independent Audits & Clean Local Release Commit (`04:12 – 04:26 +05:00`)
 - Updated [`README.md`](../README.md), [`devpost/SUBMISSION.md`](./SUBMISSION.md), [`devpost/design-brief.md`](./design-brief.md), [`devpost/VERIFICATION_REPORT.md`](./VERIFICATION_REPORT.md), and [`devpost/COMPLIANCE_CHECKLIST.md`](./COMPLIANCE_CHECKLIST.md).
