@@ -21,7 +21,7 @@ CHAPTERS & SPATIAL AR CAPABILITIES DEMONSTRATED (2:00):
 • 1:10 — 6A. Run #1 Completion Scorecard (85% B+ Safety Redirected): Completing Step 4 on Run #1 restores 100% flow (42°C | 45 PSI) and awards 85% (B+ SAFETY REDIRECTED | LOTO Violations: 1), accurately reflecting the earlier out-of-order LOTO violation at 0:28.
 • 1:17 — 6B. Clean Attempt After Reset (Run #2 — 100% A+ Flawless LOTO): After resetting and executing all 4 steps in strict LOTO sequence with zero violations, completing Step 4 awards 100% (A+ FLAWLESS LOTO | LOTO Violations: 0).
 • 1:24 — 7. Before / After Spatial Comparison Mode: Toggling [COMPARE BEFORE/AFTER] dynamically animates the 3D machine, valve lever, gauge needle, and telemetry between Fault (118°C / 142 PSI / 18% Flow) and Nominal (42°C / 45 PSI / 100% Flow).
-• 1:38 — 8. Step Navigation, Reset & 4/4 Automated LEAF Verification: Demonstrates bidirectional review, one-pinch [RESET UNIT], and automated in-preview verification in Lens Studio 5.24.1 using CLAD, Lens Studio MCP, and LEAF (4/4 scenarios passed, 36/36 assertions).
+• 1:38 — 8. Step Navigation, Reset & 5/5 Automated LEAF Verification: Demonstrates bidirectional review, one-pinch [RESET UNIT], and automated in-preview verification in Lens Studio 5.24.1 using CLAD, Lens Studio MCP, and LEAF (5/5 scenarios passed, 48/48 assertions, including FieldFixTraceTheFaultSignatureScenario).
 • 1:51 — 9. FieldFix AR — Completed Spatial Training Summary: Showcases verified nominal operation combined with 3D X-Ray Cutaway mode across all three subsystems.
 
 IMPORTANT SIMULATION NOTE:
@@ -33,7 +33,7 @@ TECH STACK:
 • SpectaclesInteractionKit (SIK) v2.0.0 & SpectaclesUIKit v2.0.0
 • Procedural Runtime 3D Geometry via MeshBuilder + SimpleVertexBaseColor.lspkg
 • Procedural 44.1 kHz Spatial Audio via CLAD /build-sfx + Spoken Voiceover Narration
-• Automated Integration Testing via LEAF (Leaf.lspkg v2.0.2 — 4/4 Scenarios Passing)
+• Automated Integration Testing via LEAF (Leaf.lspkg v2.0.2 — 5/5 Scenarios Passing)
 
 PUBLIC SOURCE REPOSITORY:
 https://github.com/awanafnan17/FieldFix-AR
@@ -115,5 +115,5 @@ We built **FieldFix AR** for **Snap SPECS (`SPECS 27`)** as an **interactive, ha
   - Constructed in TypeScript using Lens Studio's `MeshBuilder` API and `SimpleVertexBaseColor.lspkg` vertex-colored materials—generating the 3D pump skid, manifold pipes, animated cryo-coolant flow pulse rings, spoked valve wheel with asymmetric yellow-tipped lever handle, 3D simulated LOTO clasp, pressure gauge dial and needle, finned thermal relay core, 3 internal X-Ray sub-assemblies (`ValveInternalCryoSeal`, `RegulatorInternalDiaphragm`, `RelayInternalStatorCoil`), 3D callout leader struts, overhead status beacon, 3D target chevron, and dual-beam laser scan ring with zero paid or external 3D assets.
 - **SPECS World-Space UI (`FieldFixDiagnosticUI.ts`):**
   - Built with `SpectaclesUIKit.lspkg` v2.0.0 (`Frame`, `Button`, `ProgressBar`), `SpectaclesInteractionKit.lspkg` v2.0.0 (`Interactable`), 9 interactive buttons across 4 rows, and dynamic status cards for Normal, X-Ray Cutaway, LOTO Interlock Warning, Before/After Comparison, and Trainee Competency Scorecard views.
-- **Real SIK Hand Preview Verification + 4/4 Automated LEAF Test Suite (`Assets/Tests/`):**
-  - Verified both with real SIK puppet hand pinches via `PreviewInteractTool` and `QueryRuntimeSceneTool` across all 3D hotspots and all 9 UIKit buttons, and with 4 automated `Leaf.lspkg` v2.0.2 integration scenarios (`FieldFixFullDiagnosticRepairScenario`, `FieldFixMidRepairShowcaseScenario`, `FieldFixResetAndReplayScenario`, and `FieldFixAdversarialSafetyAndXRayScenario`).
+- **Real SIK Hand Preview Verification + 5/5 Automated LEAF Test Suite (`Assets/Tests/`):**
+  - Verified both with real SIK puppet hand pinches via `PreviewInteractTool` and `QueryRuntimeSceneTool` across all 3D hotspots and all 9 UIKit buttons, and with 5 automated `Leaf.lspkg` v2.0.2 integration scenarios (`FieldFixFullDiagnosticRepairScenario`, `FieldFixMidRepairShowcaseScenario`, `FieldFixResetAndReplayScenario`, `FieldFixAdversarialSafetyAndXRayScenario`, and `FieldFixTraceTheFaultSignatureScenario`).

@@ -9,6 +9,7 @@ import { FieldFixAdversarialSafetyAndXRayScenario } from "./FieldFixAdversarialS
 import { FieldFixFullDiagnosticRepairScenario } from "./FieldFixLeafScenario"
 import { FieldFixMidRepairShowcaseScenario } from "./FieldFixMidRepairShowcaseScenario"
 import { FieldFixResetAndReplayScenario } from "./FieldFixResetAndReplayScenario"
+import { FieldFixTraceTheFaultSignatureScenario } from "./FieldFixTraceTheFaultSignatureScenario"
 
 @component
 export class LeafIndex extends BaseScriptComponent {
@@ -29,6 +30,10 @@ export class LeafIndex extends BaseScriptComponent {
     {
       id: "FieldFixAdversarialSafetyAndXRayScenario",
       typename: FieldFixAdversarialSafetyAndXRayScenario.getTypeName()
+    },
+    {
+      id: "FieldFixTraceTheFaultSignatureScenario",
+      typename: FieldFixTraceTheFaultSignatureScenario.getTypeName()
     }
   ]
 }

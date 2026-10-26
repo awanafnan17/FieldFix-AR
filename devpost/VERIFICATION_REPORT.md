@@ -1,76 +1,102 @@
-# FieldFix AR — Final Competitive Quality Audit & Verification Report (v2.0 Campaign Upgrade)
+# FieldFix AR — Signature Experience Upgrade ("TRACE THE FAULT") Verification & Critique Report
 
 ## 1. Executive Summary
 
-- **Project Title:** FieldFix AR — Hands-Free Spatial Maintenance Training Simulation
-- **Competition:** Learn AR with SPECS (Devpost Hackathon)
+- **Project Title:** FieldFix AR — Hands-Free Spatial Fault-Tracing & Maintenance Training Simulation
+- **Competition:** Learn AR with SPECS (Devpost Hackathon — `https://learn-specs.devpost.com/rules`)
+- **Isolated Upgrade Branch:** `feature/spatial-fault-tracing` (branched from protected V4 release `b21815ce66596926e5d63688511d7d2fd71f875e` on `main`)
 - **Lens Studio Version:** `5.24.1.26100516` (macOS arm64)
 - **Target Device & Preview Mode:** `SPECS 27` (`Spectacles (2024)` / `SPECS`, `stereo`, `Interactive` Preview mode)
 - **Development Workflow:** **CLAD (Closed Loop Agentic Development, `ls-clad`)** + Official Lens Studio MCP Server + `Leaf.lspkg` v2.0.2
 - **Project File:** [`FieldFix-AR.esproj`](../FieldFix-AR.esproj)
-- **Verification Status:** **PASS (All 19 Competitive Acceptance Criteria Verified)**
+- **Verification Status:** **PASS (All 10 Final Acceptance Gates Verified)**
   - `0` TypeScript compilation errors (`RecompileTypeScriptTool`) and `0` runtime errors (`RunAndCollectLogsTool`)
+  - **`5/5` Automated LEAF v2.0.2 Scenarios Passing** in live Preview (`FieldFixFullDiagnosticRepairScenario`, `FieldFixMidRepairShowcaseScenario`, `FieldFixResetAndReplayScenario`, `FieldFixAdversarialSafetyAndXRayScenario`, and the new **`FieldFixTraceTheFaultSignatureScenario`**)
   - Real SIK hand-pinch gameplay verified via `PreviewInteractTool` across all 3 3D equipment hotspots (`Hotspot_CoolantValve`, `Hotspot_PressureRegulator`, `Hotspot_ThermalRelayCore`) and all 9 `SpectaclesUIKit` HUD controls (`BtnPrimaryAction`, `BtnHotspotValve`, `BtnHotspotRegulator`, `BtnHotspotRelay`, `BtnPrevStep`, `BtnNextStep`, `BtnResetUnit`, `BtnToggleXray`, `BtnToggleComparison`)
-  - `4/4` automated LEAF v2.0.2 integration scenarios passing in live Preview (`FieldFixFullDiagnosticRepairScenario`, `FieldFixMidRepairShowcaseScenario`, `FieldFixResetAndReplayScenario`, `FieldFixAdversarialSafetyAndXRayScenario`)
-  - `120.0s` (`2m 00s`) 1080p 30fps continuous motion demonstration video (`devpost/FieldFix-AR-Demo.mp4`) with zero-clipping spoken English voiceover narration (`/usr/bin/say -v Samantha`), sidechain-ducked procedural audio, Dual-AR Viewport (`1416×852` Main AR Viewport + `454×448` `2.3x` Live 3D Equipment Zoom Viewport occupying ~84% visual focus during gameplay), and 12 narrative segments showing both the `85% (B+ SAFETY REDIRECTED)` Run 1 scorecard and `100% (A+ FLAWLESS LOTO)` Run 2 scorecard after Reset
+  - **Approved V4 Video Preserved:** [`devpost/FieldFix-AR-Demo.mp4`](./FieldFix-AR-Demo.mp4) (`19,161,979` bytes, SHA-256: `7dfd46eafa6e2fdb77ef87cf9404ac354477b8b0db36fe678b7d4c4d5e6c95ce`) and backed up at `devpost/_video_build/backups_v4_approved/FieldFix-AR-Demo-V4-Approved.mp4`
+  - **New Verified V5 Candidate Video:** [`devpost/FieldFix-AR-Demo-V5-TraceTheFault.mp4`](./FieldFix-AR-Demo-V5-TraceTheFault.mp4) (`1920×1080`, 30fps H.264/AAC, `119.73s` / `2m 00s`, `26,219,712` bytes, SHA-256: `58bb1a078f6b4b26a7271e268249d5dd7e7133d2487f9e1baa139326a607d2ca`)
 
 ---
 
-## 2. High-Impact Spatial AR Upgrades & Engineering Hardening (v2.0 Campaign)
+## 2. Signature Experience Upgrade: "TRACE THE FAULT" (Phases 1–3)
 
-During our competitive engineering campaign, we audited the baseline `a55d26c` build with specialist subagents (`independent-red-team-judge`, `senior-lens-engineer`, `adversarial-qa-tester`, `creative-video-director`) and implemented five major spatial AR upgrades plus seven state-machine hardening fixes:
+### 2.1 Phase 1 — Reverse-Causal Spatial Fault Tracing (`FieldFixState.ts`)
+Instead of immediately handing the trainee a sequential repair recipe after scanning, FieldFix AR now turns diagnosis into an active **reverse-causal 3D investigation**:
+1. **Visible Symptom (`TR-309` Overheat at `118°C`):** Completing the 3D laser scan focuses the overheated `TR-309` Thermal Relay Core (`traceInspectedCount = 1/3`, `nextTraceTarget = "regulator"`) and positions the 3D `ActiveStepTargetChevron` over the upstream `PR-204` Bypass Regulator (`TRACE FAULT [1/3]: PINCH 3D [PR-204] UPSTREAM`).
+2. **Upstream Bottleneck Discovery (`PR-204` Vapor Lock at `142 PSI`):** Pinching `PR-204` advances the trace (`2/3`), **automatically activates localized 3D X-Ray Cutaway** (`focusedXrayHotspot = "regulator"`) to expose the compressed relief spring and vapor pocket, and moves the 3D chevron upstream to the `CV-101` Intake Valve (`TRACE FAULT [2/3]: PINCH 3D [CV-101] UPSTREAM`).
+3. **Root Cause Localization (`CV-101` Intake Cavitation at `18%` Flow):** Pinching `CV-101` completes the causal trace (`3/3`, `traceCompleted = true`), focuses the localized X-Ray cutaway on `ValveInternalCryoSeal`, and arms Step 1/4 (`PINCH 3D [CV-101] TO ACTUATE`).
+4. **Contextual LOTO Safety Interlock:** If a trainee attempts to bleed `PR-204` (`142 PSI`) or reseat `TR-309` (`118°C`) before isolating `CV-101`, `confirmCurrentStep()` blocks the action, flashes a crimson hazard halo on the attempted part (`interlockBlockedHotspot`), increments `safetyViolations`, and explains the physical cause-and-effect hazard (`Cannot bleed PR-204 Regulator while CV-101 Intake Valve is un-isolated`).
 
-### 2.1 New Spatial AR Features Implemented & Verified
-1. **3D Spatial X-Ray / Exploded Component Inspection (`BtnToggleXray` / `X-RAY CUTAWAY`):**
-   - Added three procedural internal 3D sub-assemblies inside [`FieldFixEquipmentMesh.ts`](../Assets/Scripts/FieldFixEquipmentMesh.ts): `ValveInternalCryoSeal` (cyan gate & bypass port), `RegulatorInternalDiaphragm` (amber/green spring diaphragm & relief poppet), and `RelayInternalStatorCoil` (crimson/emerald copper stator windings & plunger latch).
-   - Pinching `X-RAY CUTAWAY` smoothly explodes the internal sub-assemblies outward (`y = +2.75..3.15 cm, z = +1.45 cm`) and rotates them in real time while displaying internal mechanical engineering diagnostics on the HUD.
-2. **Sequential Industrial LOTO Safety Interlock (`interlockBlocked`) & Trainee Competency Scorecard:**
-   - Enforced sequential prerequisite validation in [`FieldFixState.ts`](../Assets/Scripts/FieldFixState.ts) (`confirmCurrentStep()` enforcing `Step 1 -> Step 2 -> Step 3 -> Step 4`).
-   - Attempting an out-of-order repair (e.g., attempting to unseat `TR-309` in Step 3 or purge `PR-204` in Step 2 before locking out `CV-101` in Step 1) blocks execution, increments `safetyViolations`, flashes a 3D red hazard halo across the assembly for `1.2s`, plays `FaultAlert.wav`, renders a `SAFETY INTERLOCK [LOTO VIOLATION]` banner, and auto-redirects focus to the required prerequisite step (`CV-101`).
-   - Upon completing all 4 steps, the HUD displays a **Trainee Competency Scorecard** (`100% (A+ FLAWLESS LOTO)` for zero violations or `85% (B+ SAFETY REDIRECTED)` if an interlock was triggered).
-3. **Before / After Spatial Comparison Mode (`BtnToggleComparison` / `COMPARE BEFORE/AFTER`):**
-   - After completing all 4 repair steps, pinching `COMPARE BEFORE/AFTER` toggles `comparisonFaultPreview` so the 3D machine, valve lever, gauge needle, relay plunger, flow rings, halos, and telemetry switch between `FAULT (BEFORE)` (`118°C / 142 PSI / 18% Flow`) and `NOMINAL (AFTER)` (`42°C / 45 PSI / 100% Flow`) without losing completion state.
-4. **Asymmetric Yellow-Tipped 3D Valve Lever Handle & 3D Callout Leader Struts:**
-   - Added a `9.5 cm` asymmetric lever handle with a high-visibility yellow grip tip on `ValveWheelPivot` so `90°` rotations (`0°` up -> `-90°` LOTO right -> `+90°` Open left) are unmistakably readable at 1080p, plus 3D diagonal callout leader struts on `EquipmentBaseChassis`.
-5. **7 Edge-Case & Collider Hardening Fixes:**
-   - Guarded mid-scan duplicate pinches (`isScanSweepActive`), preserved selected subsystem across already-completed step navigation, re-armed `activeStepIndex` to the first incomplete step after out-of-order execution, updated floating callout header dynamically across steps (`UNIT #04: STEP 1..4/4 -> PINCH [...]`), tightened 3D hotspot box colliders (`5.2 × 5.2 × 7.0`) to eliminate diagonal ray clipping, and aligned Row 8 (`y = -15.8, z = 1.15`) and Row 9 (`y = -19.9, z = 1.15`) UIKit buttons inside a `28 × 43.2 cm` `Frame` (`DiagnosticPanelContent` at `y = +1.35 cm`) with `1.5 cm` vertical clearance so SIK puppet hand transitions never clip adjacent rows.
+### 2.2 Phase 2 — Spatially Native Progressive Disclosure (`FieldFixDiagnosticUI.ts`)
+- **First-Run 10-Second Onboarding (`uiDisclosureMode = "onboarding"`):** On launch (`READY_TO_SCAN`), the HUD presents a spoiler-free 3-step spatial prompt (`1) Look at pulsing red TR-309 -> 2) Pinch [SCAN EQUIPMENT TELEMETRY] -> 3) Follow 3D chevron upstream`) and causal chain (`CAUSAL TRACE: [TR-309 SYMPTOM] -> [PR-204 BLOCK] -> [CV-101 CAUSE]`) without spoiling the 4 repair steps.
+- **Direct 3D Action Prompts on Floating Badges:** Each 3D component badge displays its live telemetry plus a context-sensitive spatial prompt (`[PINCH: TRACE 2]`, `[PINCH: LOTO]`, `[PINCH: PURGE]`, `[PINCH: RESEAT]`, `[PINCH: STEP 4]`).
+- **Localized Auto-X-Ray Differential Lift:** When X-Ray is active, only the currently selected component lifts into full exploded view (`1.0x` height) while non-selected components stay tucked inside their housings (`0.36x` height) so exploded geometry never collides with floating badges or the 3D target chevron.
 
----
-
-## 3. Automated LEAF v2.0.2 Integration Test Suite (`4/4` Scenarios Passing)
-
-All four automated scenarios in [`Assets/Tests/LeafIndex.ts`](../Assets/Tests/LeafIndex.ts) were executed serially via `run_leaf_scenario` in `Preview 1`:
-
-1. **`FieldFixFullDiagnosticRepairScenario`** ([FieldFixLeafScenario.ts](../Assets/Tests/FieldFixLeafScenario.ts)) — `status: "succeeded"` (8 assertions: standby state, telemetry scan, 4-step guided repair, `42°C | 45 PSI | 100% Flow`, `4/4 DONE`).
-2. **`FieldFixMidRepairShowcaseScenario`** ([FieldFixMidRepairShowcaseScenario.ts](../Assets/Tests/FieldFixMidRepairShowcaseScenario.ts)) — `status: "succeeded"` (3 assertions: Step 1 LOTO & Step 2 Regulator purge, `82°C | 38 PSI`, `2/4 DONE`).
-3. **`FieldFixResetAndReplayScenario`** ([FieldFixResetAndReplayScenario.ts](../Assets/Tests/FieldFixResetAndReplayScenario.ts)) — `status: "succeeded"` (7 assertions: Step 1 execution, `< PREV STEP` / `NEXT STEP >` navigation, `RESET UNIT` back to `READY_TO_SCAN`, and re-scan replay).
-4. **`FieldFixAdversarialSafetyAndXRayScenario`** ([FieldFixAdversarialSafetyAndXRayScenario.ts](../Assets/Tests/FieldFixAdversarialSafetyAndXRayScenario.ts)) — `status: "succeeded"` (18 assertions: X-Ray Cutaway toggle on/off, out-of-order LOTO Safety Interlock block on Step 3 `TR-309`, auto-redirect to Step 1 `CV-101`, full 4-step completion with `85% (B+ SAFETY REDIRECTED)` scorecard, Before/After Comparison toggle between `118°C / 142 PSI` Fault and `42°C / 45 PSI` Nominal, and clean reset).
+### 2.3 Phase 3 — 3D Procedural Machine & Flow Polish (`FieldFixEquipmentMesh.ts`)
+- **2-Zone Causal Coolant Flow (`CoolantFlowPulseRing_0..5`):** Six torus rings split into **Upstream Zone A** (`x = -12.5..-3.5`, fast amber cavitation flow before `PR-204`) and **Downstream Zone B** (`x = -2.2..+11.5`, choked `0.22x` crimson trickle starving `TR-309`).
+- **3D Mechanical Cause-and-Effect Indicators:**
+  - `FaultBottleneckRing`: Pulsing crimson choke collar at the `PR-204` manifold junction during fault state; turns emerald in nominal operation.
+  - `RiserPressurePulseRing`: Traveling pressure surge ring rising up the vertical `PR-204` bypass column while `142 PSI` is trapped.
+  - `ManifoldFlowImpeller`: 2-blade mechanical sight-glass rotor inside `ManifoldSightGlass` spinning proportionally to simulated flow (`18%` jitter -> `0%` LOTO stopped -> `100%` smooth).
+  - `RegulatorPurgePlume`: 3-ring upward vapor relief plume expanding above `RegulatorReliefChimney` when Step 2 bleeds `142 PSI -> 38 PSI`.
+  - `RelayOverheatCrown`: Dual counter-rotating thermal warning rings hovering around `TR-309` until Step 3 reseats the relay core.
+  - `CausalFlowBridge`: Segmented 3D flow-vector chevrons linking `CV-101 -> PR-204 -> TR-309`.
 
 ---
 
-## 4. Realistic Competitive Assessment Against Official Judging Criteria
+## 3. Phase 4 Real QA, LEAF Verification (`5/5`) & Adversarial Audit
 
-| Criterion | Realistic Score | Key Strengths | Honest Limitations / Trade-Offs |
-| :--- | :---: | :--- | :--- |
-| **Design** | **9.3 / 10** | Side-by-side spatial layout (`3D machine` on left, stationary `28×43.2 UIKit Frame` on right) keeps the central workspace clear; high-contrast text with dark backing pills (`alpha 0.88–0.94`) respects SPECS additive waveguide rules; asymmetric yellow-tipped 3D valve lever, 3D callout leader struts, and exploding 3D X-Ray sub-assemblies make every state change immediately legible at 1080p. | Uses procedural geometric primitives (`MeshBuilder` cylinders, boxes, lathes, and vertex colors) rather than photorealistic textured CAD/GLB models, trading visual realism for 100% offline reproducibility and zero external asset dependencies. |
-| **Technical Implementation** | **9.5 / 10** | Clean modular architecture (`FieldFixState.ts`, `FieldFixEquipmentMesh.ts`, `FieldFixDiagnosticUI.ts`, `FieldFixAudioController.ts`, `FieldFixMain.ts`); dual-modality interaction (direct 3D SIK `Interactable` hotspots + 9 `SpectaclesUIKit` buttons); Sequential LOTO Safety Interlock, 3D X-Ray Cutaway, Before/After Comparison, and Trainee Scorecard; verified via live `PreviewInteractTool` SIK hand batches and `4/4` automated `LEAF` scenarios with zero compiler/runtime errors. | Telemetry (`Temperature`, `Pressure`, `Flow`) and fault states are deterministic software simulations rather than live external IoT/MQTT streams or computer-vision object tracking. |
-| **Innovation & Originality** | **9.3 / 10** | Goes far beyond floating 2D checklists: trainees can explode internal 3D valve seals, spring diaphragms, and copper stator coils in X-Ray Cutaway mode, experience real-time LOTO safety interlock enforcement when attempting out-of-order repairs, pinch 3D parts directly in space to actuate them, and toggle a live 3D Before/After comparison. | Focused on a single structured 4-step maintenance training scenario (`Cryo-Coolant Pump & Relay Unit #04`) rather than a multi-machine authoring platform. |
-| **Presentation** | **9.6 / 10** | `120.0s` (`2m 00s`) 1080p 30fps narrated demonstration video (`devpost/FieldFix-AR-Demo.mp4`) opening immediately in live AR gameplay (`0:00–0:05.5`), with zero-clipping spoken English voiceover narration, sidechain-ducked procedural audio, Dual-AR Viewport (`1416×852` Main AR Viewport + `454×448` `2.3x` Live 3D Equipment Zoom Viewport), zero blank frames, and 12 structured narrative segments showing both the `85% (B+)` Run 1 scorecard and `100% (A+)` Run 2 scorecard after Reset. | Captured in the Lens Studio 5.24.1 `SPECS 27` interactive simulator preview rather than through-the-lens optical hardware camera footage on physical Spectacles hardware. |
-| **Overall Assessment** | **9.43 / 10** | Highly competitive, deeply verified, rule-compliant First-Place contender in the **Learn & Assist** category with genuine 3D spatial utility and clear judge communication. | Clearly documented simulation boundaries ensure judges evaluate the project on its true merits. |
+### 3.1 Automated LEAF v2.0.2 Test Suite (`5/5` Scenarios Passing)
+All five scenarios in [`Assets/Tests/LeafIndex.ts`](../Assets/Tests/LeafIndex.ts) were executed via `run_leaf_scenario` in `SPECS 27` Preview:
+1. **`FieldFixFullDiagnosticRepairScenario`** ([`FieldFixLeafScenario.ts`](../Assets/Tests/FieldFixLeafScenario.ts)) — `status: "succeeded"`
+2. **`FieldFixMidRepairShowcaseScenario`** ([`FieldFixMidRepairShowcaseScenario.ts`](../Assets/Tests/FieldFixMidRepairShowcaseScenario.ts)) — `status: "succeeded"`
+3. **`FieldFixResetAndReplayScenario`** ([`FieldFixResetAndReplayScenario.ts`](../Assets/Tests/FieldFixResetAndReplayScenario.ts)) — `status: "succeeded"`
+4. **`FieldFixAdversarialSafetyAndXRayScenario`** ([`FieldFixAdversarialSafetyAndXRayScenario.ts`](../Assets/Tests/FieldFixAdversarialSafetyAndXRayScenario.ts)) — `status: "succeeded"`
+5. **`FieldFixTraceTheFaultSignatureScenario`** ([`FieldFixTraceTheFaultSignatureScenario.ts`](../Assets/Tests/FieldFixTraceTheFaultSignatureScenario.ts)) — `status: "succeeded"` (12 assertions verifying initial `onboarding` disclosure, scan transition to `TR-309` symptom `1/3`, upstream pinch on `PR-204` `2/3` with automatic X-Ray cutaway, manual `BtnToggleXray` off/on override during trace, out-of-order LOTO violation on `PR-204` redirecting to `CV-101` `3/3`, full 4-step causal repair to `42°C | 45 PSI | 100% Flow`, `85% B+` scorecard, Before/After comparison toggle, and clean reset).
+
+### 3.2 Independent Adversarial Attempt-to-Break Audit (`blind-qa-explorer`) & Fixes Verified
+An independent `blind-qa-explorer` subagent audited the state machine, 3D mesh controller, and UI controller, identifying 2 Medium bugs and 4 Low polish items—**all 6 were fixed and re-verified**:
+1. **[Fixed — Medium] Manual X-Ray Off Toggle During Trace:** `focusedXrayHotspot` previously remained non-null when `this._xrayMode` was toggled off during `DIAGNOSING` or `REPAIRING`. Fixed in [`FieldFixState.ts`](../Assets/Scripts/FieldFixState.ts) by gating `focusedXrayHotspot` on `this._xrayMode === true`, and added an explicit LEAF assertion in `FieldFixTraceTheFaultSignatureScenario.ts`.
+2. **[Fixed — Medium] Premature Phase Transition on `nextStep()` at `0/4`:** Calling `nextStep()` while `phase === "DIAGNOSING"` at `0/4` steps previously set `phase = "REPAIRING"`. Fixed in [`FieldFixState.ts`](../Assets/Scripts/FieldFixState.ts) so `DIAGNOSING` is preserved until a repair step is actually confirmed.
+3. **[Fixed — Low] `toggleComparisonMode()` Guard During `SCANNING`:** Guarded `toggleComparisonMode()` so it is a no-op during `SCANNING`.
+4. **[Fixed — Low] Transient Timer Cleanup on Reset:** Zeroed `purgePlumeTimer` and `interlockFlashTimers` immediately when `phase === "READY_TO_SCAN"` in [`FieldFixEquipmentMesh.ts`](../Assets/Scripts/FieldFixEquipmentMesh.ts).
+5. **[Fixed — Low] `uiDisclosureMode` Consumption:** Connected `snapshot.uiDisclosureMode === "onboarding"` to render the causal trace summary strip in [`FieldFixDiagnosticUI.ts`](../Assets/Scripts/FieldFixDiagnosticUI.ts).
+6. **[Fixed — Low] Localized X-Ray Vertical Clearance:** Raised `ActiveStepTargetChevron` (`y = 6.9 / 10.6 / 7.0`) and scaled non-selected X-Ray sub-assemblies to `0.36x` lift so exploded parts never overlap floating badges or the target chevron.
+
+---
+
+## 4. Phase 5 Blind 10-Second Usability & Side-by-Side V4 vs. V5 Critique
+
+*Note: Evaluated via an independent `independent-red-team-judge` agent critique (`conversation://c710c9cc-1861-4c59-99e4-8c4baebc691e`, clearly labeled as simulated blind reviewer feedback rather than a human test subject).*
+
+### 4.1 First-10-Second Blind Usability Test
+- **What the machine is (`< 3s`):** Immediately recognizable as `CRYO-PUMP #04` via the 3D manifold skid, spoked valve wheel, pressure dial, finned relay core, and `ALERT: CRYO-PUMP #04 — TRACE FAULT` header.
+- **What is wrong with it (`< 6s`):** Even before scanning, the 2-zone coolant flow rings show fast amber cavitation upstream of `PR-204` (`FaultBottleneckRing`) and choked red trickle downstream starving `TR-309` (`RelayOverheatCrown`, `116°C [OVERHEAT SYMPTOM]`).
+- **What the user should do (`< 10s`):** The 3D callout (`UNIT #04: PINCH [SCAN] TO TRACE FAULT`), bobbing 3D chevron over `TR-309`, and `FIRST-RUN GUIDE` clearly direct the user to pinch `[SCAN]` or any 3D part.
+
+### 4.2 Side-by-Side Comparison: Approved V4 (`main`) vs. Upgraded V5 (`feature/spatial-fault-tracing`)
+
+| Dimension / Judging Criterion | V4 Approved Baseline (`b21815c`) | V5 Signature Upgrade (`feature/spatial-fault-tracing`) | Evidence & Measurable Delta |
+| :--- | :--- | :--- | :--- |
+| **1. Core Learning Loop & Signature Interaction** | Linear checklist execution: Scan immediately highlights `CV-101` (Step 1) and tells the user to lock the valve without investigating *why* `TR-309` overheated. | **"TRACE THE FAULT" Reverse-Causal Discovery:** Scan starts at the visible symptom (`TR-309` `118°C`), guides the user upstream to the bottleneck (`PR-204` `142 PSI` with automatic localized X-Ray cutaway), and then to the root cause (`CV-101` `18%` cavitation). | Verified in [`FieldFixState.ts`](../Assets/Scripts/FieldFixState.ts) and [`FieldFixTraceTheFaultSignatureScenario.ts`](../Assets/Tests/FieldFixTraceTheFaultSignatureScenario.ts) (`traceInspectedCount: 0 -> 1 -> 2 -> 3`). |
+| **2. 3D Machine Cause-and-Effect Visuals** | 3 uniform-speed flow rings along the manifold; all 3 X-Ray sub-assemblies explode simultaneously to full height, causing visual crowding near badges. | **2-Zone Differential Flow (`6` rings)** + `FaultBottleneckRing`, `RiserPressurePulseRing`, `ManifoldFlowImpeller`, `RegulatorPurgePlume`, `RelayOverheatCrown`, `CausalFlowBridge`, and **localized single-component X-Ray lift** (`1.0x` focused vs `0.36x` tucked). | Verified in [`FieldFixEquipmentMesh.ts`](../Assets/Scripts/FieldFixEquipmentMesh.ts) and high-res screenshots [`01_standby_ready_to_scan.png`](./screenshots/01_standby_ready_to_scan.png) – [`05_xray_and_safety_interlock.png`](./screenshots/05_xray_and_safety_interlock.png). |
+| **3. Spatial UI & Progressive Disclosure** | Standby screen already reveals the full 4-step repair recipe (`1) Lock CV-101 -> 2) Purge PR-204...`) before the user has even scanned the machine. | **Progressive Disclosure (`uiDisclosureMode`):** Standby shows a spoiler-free 10-second onboarding guide and causal chain (`[TR-309 SYMPTOM] -> [PR-204 BLOCK] -> [CV-101 CAUSE]`); 3D floating badges include direct `[PINCH: ...]` prompts. | Verified in [`FieldFixDiagnosticUI.ts`](../Assets/Scripts/FieldFixDiagnosticUI.ts) and [`01_standby_ready_to_scan.png`](./screenshots/01_standby_ready_to_scan.png). |
+| **4. Automated Testing & QA Coverage** | `4/4` LEAF scenarios (`36` assertions). | **`5/5` LEAF scenarios (`48` assertions)** including dedicated signature trace + manual X-Ray toggle override + adversarial QA fixes. | Verified via `run_leaf_scenario` (`5/5` `"status": "succeeded"`). |
+| **5. Independent Red-Team Judge Score (Simulated)** | **7.28 / 10** (weighted across Design, Tech, Innovation, Presentation under strict red-team rubric). | **8.80+ / 10** (`+1.52` pt improvement before post-audit fixes; all 4 visual/UX critique items subsequently resolved). | Documented in independent audit log (`conversation://c710c9cc-1861-4c59-99e4-8c4baebc691e`). |
 
 ---
 
 ## 5. Captured Screenshot & Video Evidence Manifest
 
-All visual captures in `devpost/screenshots/` reflect the upgraded v2.0 experience:
+All visual captures in `devpost/screenshots/` were freshly captured from the live `SPECS 27` Preview after applying all Phase 1–5 fixes:
 
-1. [01_standby_ready_to_scan.png](./screenshots/01_standby_ready_to_scan.png) (`1392×1910`) — Standby state (`READY_TO_SCAN`) with asymmetric yellow-tipped 3D valve lever at `0°` (up), 3D callout leader struts, and 9 UIKit controls across 4 button rows.
-2. [02a_step1_loto_valve_locked.png](./screenshots/02a_step1_loto_valve_locked.png) (`1392×1910`) — Step 1/4 verified: asymmetric 3D valve lever rotated `-90°` right, red 3D `LotoSafetyClasp` engaged on `CV-101`, `0%` simulated flow, and 3D `ActiveStepTargetChevron` hovering over `PR-204`.
-3. [02_mid_repair_step3_of_4.png](./screenshots/02_mid_repair_step3_of_4.png) (`1392×1910`) — Step 2/4 verified (`[1:LOTO OK] [2:PURGE OK]`, `82°C | 38 PSI`), gauge needle swept right to the green marker, green halo on `PR-204`, and 3D target chevron hovering over `TR-309`.
-4. [03_completed_nominal_4_of_4.png](./screenshots/03_completed_nominal_4_of_4.png) (`1392×1910`) — All 4 repair steps completed (`42°C | 45 PSI | 100% FLOW (NOMINAL) | 4/4 DONE`), Trainee Competency Scorecard, emerald halos, and rapid emerald coolant flow rings.
-5. [04_reset_and_replay_verified.png](./screenshots/04_reset_and_replay_verified.png) (`1392×1910`) — Post-reset state verified via `FieldFixResetAndReplayScenario`.
-6. [05_full_editor_with_preview.png](./screenshots/05_full_editor_with_preview.png) (`2272×1824`) — Full Lens Studio 5.24.1 window showing Scene Hierarchy, 3D Scene View, Logger (`0` errors), and `Preview 1` (`SPECS 27`).
-7. [feature_xray_cutaway.png](./screenshots/feature_xray_cutaway.png) (`1392×1910`) — 3D X-Ray Cutaway mode (`X-RAY: ON`) showing internal rotating `ValveInternalCryoSeal`, `RegulatorInternalDiaphragm`, and `RelayInternalStatorCoil` sub-assemblies exploded out of the housings.
-8. [feature_safety_interlock.png](./screenshots/feature_safety_interlock.png) (`1392×1910`) — Sequential LOTO Safety Interlock (`SAFETY INTERLOCK [LOTO VIOLATION]`) blocking out-of-order Step 3 (`TR-309`) execution while `142 PSI` is trapped and redirecting to Step 1 (`CV-101`).
-9. [feature_comparison_fault.png](./screenshots/feature_comparison_fault.png) (`1392×1910`) — Before/After Spatial Comparison Mode (`COMPARE: FAULT`) previewing the `118°C / 142 PSI / 18% Flow` fault state after repair completion.
-10. [FieldFix-AR-Demo.mp4](./FieldFix-AR-Demo.mp4) (`1920×1080`, 30fps H.264/AAC, `119.73s` / `2m 00s`, `19,161,979` bytes, SHA-256: `7dfd46eafa6e2fdb77ef87cf9404ac354477b8b0db36fe678b7d4c4d5e6c95ce`) — Narrated continuous motion demonstration video assembled from real 60fps Lens Studio window recordings, Dual-AR Viewport (`1416×852` Main AR Viewport + `454×448` `2.3x` Live 3D Equipment Zoom Viewport), zero-clipping spoken English voiceover narration, and synchronized procedural WAV audio.
+1. [`01_standby_ready_to_scan.png`](./screenshots/01_standby_ready_to_scan.png) (`1392×1910`) — Standby state (`READY_TO_SCAN`) with 2-zone choked coolant flow, amber halos on `CV-101` / `PR-204`, crimson overheat halo + crown on `TR-309`, and spoiler-free first-run onboarding guide.
+2. [`02_diagnosing_fault_localized.png`](./screenshots/02_diagnosing_fault_localized.png) (`1392×1910`) — `"TRACE THE FAULT"` upstream discovery (`TRACE FAULT PATH 2/3 INSPECTED`) with localized Auto-X-Ray cutaway on `PR-204` (`142 PSI` spring vapor lock) and 3D chevron guiding upstream to `CV-101`.
+3. [`02a_step1_loto_valve_locked.png`](./screenshots/02a_step1_loto_valve_locked.png) (`1392×1910`) — Step 1/4 verified: `CV-101` lever rotated `-90°`, red `LotoSafetyClasp` engaged, `0%` flow, and chevron over `PR-204`.
+4. [`02_mid_repair_step3_of_4.png`](./screenshots/02_mid_repair_step3_of_4.png) / [`03_repairing_mid_procedure_2_of_4.png`](./screenshots/03_repairing_mid_procedure_2_of_4.png) (`1392×1910`) — Step 2/4 verified (`[1:LOTO OK] [2:PURGE OK]`, `82°C | 38 PSI`), `PR-204` halo green, and localized Auto-X-Ray on `TR-309`.
+5. [`03_completed_nominal_4_of_4.png`](./screenshots/03_completed_nominal_4_of_4.png) / [`04_completed_nominal_verified.png`](./screenshots/04_completed_nominal_verified.png) (`1392×1910`) — All 4 repair steps completed (`42°C | 45 PSI | 100% LAMINAR FLOW RESTORED | 4/4 DONE`), `85% (B+ SAFETY REDIRECTED)` scorecard, and emerald flow rings.
+6. [`04_reset_and_replay_verified.png`](./screenshots/04_reset_and_replay_verified.png) (`1392×1910`) — Clean post-reset state (`0/4 DONE`).
+7. [`05_xray_and_safety_interlock.png`](./screenshots/05_xray_and_safety_interlock.png) / [`feature_safety_interlock.png`](./screenshots/feature_safety_interlock.png) (`1392×1910`) — Out-of-order LOTO Safety Interlock (`LOTO BLOCKED: PINCH [CV-101] FIRST!`) flashing `PR-204` crimson and redirecting upstream to `CV-101`.
+8. [`05_full_editor_with_preview.png`](./screenshots/05_full_editor_with_preview.png) (`2140×1692`) — Full Lens Studio 5.24.1 window showing `[FieldFixTraceTheFaultSignatureScenario] PASSED`, TypeScript compilation succeeded, and `SPECS 27` Preview.
+9. [`FieldFix-AR-Demo-V5-TraceTheFault.mp4`](./FieldFix-AR-Demo-V5-TraceTheFault.mp4) (`1920×1080`, 30fps H.264/AAC, `119.73s` / `2m 00s`, `26,219,712` bytes, SHA-256: `58bb1a078f6b4b26a7271e268249d5dd7e7133d2487f9e1baa139326a607d2ca`) — New V5 judge-first candidate demonstration video showcasing the `"TRACE THE FAULT"` signature experience, localized Auto-X-Ray cutaway, LOTO safety interlock, `85% B+` vs `100% A+` scorecards, Before/After comparison, and `5/5` passing LEAF scenarios.
+10. [`FieldFix-AR-Demo.mp4`](./FieldFix-AR-Demo.mp4) (`1920×1080`, 30fps H.264/AAC, `119.73s`, `19,161,979` bytes, SHA-256: `7dfd46eafa6e2fdb77ef87cf9404ac354477b8b0db36fe678b7d4c4d5e6c95ce`) — Preserved V4 approved demonstration video (untouched as instructed).

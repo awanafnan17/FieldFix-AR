@@ -139,8 +139,8 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       "TitleBrandText",
       new vec3(0, 17.2, 0.1),
       new vec2(26.4, 2.3),
-      "FIELDFIX AR  //  MAINTENANCE TRAINING SIMULATION",
-      33,
+      "FIELDFIX AR  //  SPATIAL FAULT-TRACING TRAINER",
+      32,
       new vec4(0.62, 0.95, 1.0, 1.0),
       true,
       new vec4(0.04, 0.10, 0.18, 0.92)
@@ -152,7 +152,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(0, 14.8, 0.15),
       new vec2(26.4, 2.5),
       "STANDBY: CRYO-PUMP UNIT #04",
-      44,
+      42,
       new vec4(1.0, 0.84, 0.30, 1.0),
       true,
       new vec4(0.14, 0.08, 0.03, 0.94)
@@ -165,20 +165,20 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(0, 12.3, 0.15),
       new vec2(26.4, 2.3),
       "SIM TELEMETRY: 118C  |  142 PSI  |  FLOW: 18%",
-      36,
+      34,
       new vec4(0.50, 0.96, 1.0, 1.0),
       true,
       new vec4(0.04, 0.11, 0.17, 0.92)
     )
 
-    // 3. Subsystem Hotspot Selector Row (3 UIKit Buttons)
+    // 3. Compact Subsystem Trace Pill Row (3 UIKit Buttons)
     this.btnValve = this.createUIButton(
       root,
       "BtnHotspotValve",
-      new vec3(-8.6, 9.3, 0.95),
-      new vec3(8.0, 3.4, 1.2),
+      new vec3(-8.6, 9.4, 0.95),
+      new vec3(8.0, 2.5, 1.0),
       "CV-101 VALVE",
-      31,
+      27,
       "Secondary",
       () => {
         this.onSelectHotspotEvent.invoke("valve")
@@ -188,10 +188,10 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnRegulator = this.createUIButton(
       root,
       "BtnHotspotRegulator",
-      new vec3(0.0, 9.3, 0.95),
-      new vec3(8.0, 3.4, 1.2),
+      new vec3(0.0, 9.4, 0.95),
+      new vec3(8.0, 2.5, 1.0),
       "PR-204 REG",
-      31,
+      27,
       "Secondary",
       () => {
         this.onSelectHotspotEvent.invoke("regulator")
@@ -201,24 +201,24 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.btnRelay = this.createUIButton(
       root,
       "BtnHotspotRelay",
-      new vec3(8.6, 9.3, 0.95),
-      new vec3(8.0, 3.4, 1.2),
+      new vec3(8.6, 9.4, 0.95),
+      new vec3(8.0, 2.5, 1.0),
       "TR-309 RELAY",
-      31,
+      27,
       "Secondary",
       () => {
         this.onSelectHotspotEvent.invoke("relay")
       }
     )
 
-    // 4. Selected Component Diagnosis Section
+    // 4. Selected Component Diagnosis & Causal Trace Section
     this.componentTitleText = this.createTextLabel(
       root,
       "ComponentTitleText",
-      new vec3(0, 6.0, 0.15),
+      new vec3(0, 6.2, 0.15),
       new vec2(26.4, 2.3),
       "[TR-309] CRITICAL: CORE OVERHEAT (118C)",
-      38,
+      36,
       new vec4(1.0, 0.42, 0.42, 1.0),
       true,
       new vec4(0.15, 0.05, 0.06, 0.92)
@@ -227,10 +227,10 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.rootCauseText = this.createTextLabel(
       root,
       "RootCauseText",
-      new vec3(0, 3.4, 0.1),
-      new vec2(26.2, 2.8),
+      new vec3(0, 3.5, 0.1),
+      new vec2(26.2, 2.9),
       "Simulated thermal latch tripped due to coolant starvation.",
-      32,
+      29,
       new vec4(0.92, 0.97, 1.0, 1.0),
       true,
       new vec4(0.04, 0.08, 0.14, 0.88)
@@ -243,7 +243,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(0, 0.6, 0.15),
       new vec2(26.4, 2.4),
       "STEP 1/4: LOCKOUT ISOLATION VALVE",
-      40,
+      38,
       new vec4(1.0, 0.88, 0.36, 1.0),
       true,
       new vec4(0.12, 0.10, 0.03, 0.92)
@@ -255,7 +255,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(0, -2.1, 0.1),
       new vec2(26.2, 3.0),
       "Pinch 3D CV-101 Valve or EXECUTE button to rotate valve 90 deg and apply LOTO clasp.",
-      32,
+      29,
       new vec4(1.0, 1.0, 1.0, 1.0),
       true,
       new vec4(0.04, 0.08, 0.14, 0.88)
@@ -265,9 +265,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       root,
       "SafetyWarningText",
       new vec3(0, -4.8, 0.1),
-      new vec2(26.2, 2.1),
+      new vec2(26.2, 2.2),
       "SAFETY: Verify LOTO tag & hand clearance on intake wheel.",
-      29,
+      27,
       new vec4(1.0, 0.78, 0.34, 1.0),
       true,
       new vec4(0.12, 0.08, 0.03, 0.88)
@@ -280,7 +280,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(0, -7.1, 0.15),
       new vec2(26.4, 2.0),
       "[1:LOTO ..]   [2:PURGE ..]   [3:RESEAT ..]   [4:FLOW ..]",
-      30,
+      29,
       new vec4(0.78, 0.95, 1.0, 1.0),
       true,
       new vec4(0.04, 0.10, 0.16, 0.92)
@@ -306,14 +306,14 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec4(0.04, 0.14, 0.08, 0.85)
     )
 
-    // 7. Primary Confirm / Scan Action Button
+    // 7. Dominant Primary Confirm / Scan Action Button
     this.btnPrimaryAction = this.createUIButton(
       root,
       "BtnPrimaryAction",
-      new vec3(0, -12.1, 0.75),
-      new vec3(25.0, 3.4, 1.0),
+      new vec3(0, -12.1, 0.80),
+      new vec3(25.2, 3.6, 1.1),
       "SCAN EQUIPMENT TELEMETRY",
-      37,
+      36,
       "Primary",
       () => {
         if (!this.pendingSnapshot) return
@@ -329,14 +329,14 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       }
     )
 
-    // 8. Navigation Row: Prev Step | Next Step | Reset Unit
+    // 8. Recessed Inspector Utility Tray — Row A: Prev Step | Next Step | Reset Unit
     this.btnPrev = this.createUIButton(
       root,
       "BtnPrevStep",
       new vec3(-8.6, -15.8, 1.15),
       new vec3(8.0, 2.6, 1.1),
       "< PREV STEP",
-      29,
+      27,
       "PrimaryNeutral",
       () => {
         this.onPrevStepEvent.invoke()
@@ -349,7 +349,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(0.0, -15.8, 1.15),
       new vec3(8.0, 2.6, 1.1),
       "NEXT STEP >",
-      29,
+      27,
       "PrimaryNeutral",
       () => {
         this.onNextStepEvent.invoke()
@@ -362,21 +362,21 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(8.6, -15.8, 1.15),
       new vec3(8.0, 2.6, 1.1),
       "RESET UNIT",
-      29,
+      27,
       "Secondary",
       () => {
         this.onResetRequestedEvent.invoke()
       }
     )
 
-    // 9. Advanced Spatial Utility Row: 3D X-Ray Cutaway & Before/After State Comparison
+    // 9. Recessed Inspector Utility Tray — Row B: 3D X-Ray Cutaway & Before/After State Comparison
     this.btnToggleXray = this.createUIButton(
       root,
       "BtnToggleXray",
       new vec3(-6.5, -19.9, 1.15),
       new vec3(12.2, 2.6, 1.1),
       "X-RAY CUTAWAY",
-      28,
+      27,
       "Secondary",
       () => {
         this.onToggleXrayEvent.invoke()
@@ -389,7 +389,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       new vec3(6.5, -19.9, 1.15),
       new vec3(12.2, 2.6, 1.1),
       "COMPARE BEFORE/AFTER",
-      28,
+      27,
       "Secondary",
       () => {
         this.onToggleComparisonEvent.invoke()
@@ -407,9 +407,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       calloutsRoot,
       "CalloutUnitHeader",
       new vec3(0, 14.5, 0.5),
-      new vec2(23.5, 2.5),
-      "UNIT #04: READY FOR SPATIAL SCAN",
-      36,
+      new vec2(24.5, 2.5),
+      "UNIT #04: PINCH [SCAN] TO TRACE FAULT",
+      34,
       new vec4(0.55, 0.96, 1.0, 1.0),
       true,
       new vec4(0.04, 0.09, 0.16, 0.94)
@@ -419,9 +419,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       calloutsRoot,
       "CalloutRegulatorBadge",
       new vec3(1.6, 11.5, 1.0),
-      new vec2(18.0, 2.3),
-      "PR-204: 142 PSI [OVER-PRESSURE]",
-      33,
+      new vec2(19.5, 2.3),
+      "PR-204: 140 PSI [VAPOR LOCK]",
+      31,
       new vec4(1.0, 0.80, 0.28, 1.0),
       true,
       new vec4(0.14, 0.09, 0.03, 0.94)
@@ -431,9 +431,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       calloutsRoot,
       "CalloutValveBadge",
       new vec3(-8.4, -5.9, 1.2),
-      new vec2(15.8, 2.3),
-      "CV-101: 18% FLOW [WARN]",
-      33,
+      new vec2(18.2, 2.3),
+      "CV-101: 18% FLOW [CAVITATION]",
+      31,
       new vec4(1.0, 0.80, 0.28, 1.0),
       true,
       new vec4(0.14, 0.09, 0.03, 0.94)
@@ -443,9 +443,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       calloutsRoot,
       "CalloutRelayBadge",
       new vec3(8.4, -5.9, 1.2),
-      new vec2(15.8, 2.3),
-      "TR-309: 118C [OVERHEAT]",
-      33,
+      new vec2(18.2, 2.3),
+      "TR-309: 116C [OVERHEAT SYMPTOM]",
+      31,
       new vec4(1.0, 0.40, 0.40, 1.0),
       true,
       new vec4(0.16, 0.04, 0.05, 0.94)
@@ -575,7 +575,11 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         ? "FAULT SNAPSHOT"
         : snapshot.phase === "COMPLETED"
           ? "NOMINAL"
-          : "SIMULATED"
+          : snapshot.flowBottleneckStage === "isolated_trapped_psi"
+            ? "LOTO ISOLATED"
+            : snapshot.flowBottleneckStage === "purged_cooled_ready"
+              ? "PURGED READY"
+              : "CHOKED @ PR-204"
       this.telemetryBarText.text =
         `SIM TELEMETRY: ${snapshot.systemTempC}C  |  ${snapshot.systemPressurePsi} PSI  |  FLOW: ${snapshot.coolantFlowPct}% (${flowStatus})`
       this.telemetryBarText.textFill.color =
@@ -591,7 +595,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.updateHotspotButtonLabel(this.btnRegulator, "regulator", "PR-204 REG", snapshot)
     this.updateHotspotButtonLabel(this.btnRelay, "relay", "TR-309 RELAY", snapshot)
 
-    // 4. Selected Component Details
+    // 4. Selected Component Details & Progressive Disclosure
     const comp = snapshot.selectedComponent
     const compRepaired =
       !snapshot.comparisonFaultPreview &&
@@ -606,31 +610,38 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       !snapshot.completedSteps[3]
 
     if (this.componentTitleText) {
-      const statusText = compRepaired
-        ? comp.nominalStatusLabel
-        : valveLockedOutMidRepair
-          ? "LOTO ISOLATED: INTAKE LOCKED (0% FLOW)"
-          : comp.faultStatusLabel
-      const xrayTag = snapshot.xrayMode ? " [X-RAY]" : ""
-      this.componentTitleText.text = `[${comp.subsystemCode}] ${statusText}${xrayTag}`
-      this.componentTitleText.textFill.color = compRepaired
-        ? new vec4(0.32, 0.98, 0.58, 1.0)
-        : valveLockedOutMidRepair
-          ? new vec4(0.45, 0.96, 1.0, 1.0)
-          : this.severityColor(comp.initialSeverity)
+      if (snapshot.phase === "READY_TO_SCAN") {
+        this.componentTitleText.text = "[UNIT #04] COOLANT STARVATION ALARM (116C)"
+        this.componentTitleText.textFill.color = new vec4(1.0, 0.42, 0.42, 1.0)
+      } else {
+        const statusText = compRepaired
+          ? comp.nominalStatusLabel
+          : valveLockedOutMidRepair
+            ? "LOTO ISOLATED: INTAKE LOCKED (0% FLOW)"
+            : comp.faultStatusLabel
+        const xrayTag = snapshot.xrayMode ? " [X-RAY]" : ""
+        this.componentTitleText.text = `[${comp.subsystemCode}] ${statusText}${xrayTag}`
+        this.componentTitleText.textFill.color = compRepaired
+          ? new vec4(0.32, 0.98, 0.58, 1.0)
+          : valveLockedOutMidRepair
+            ? new vec4(0.45, 0.96, 1.0, 1.0)
+            : this.severityColor(comp.initialSeverity)
+      }
     }
 
     if (this.rootCauseText) {
-      if (snapshot.xrayMode) {
-        this.rootCauseText.text = comp.xrayInternalSummary
-        this.rootCauseText.textFill.color = new vec4(0.55, 0.98, 1.0, 1.0)
-      } else if (snapshot.phase === "READY_TO_SCAN") {
+      if (snapshot.phase === "READY_TO_SCAN") {
         this.rootCauseText.text =
-          "Training Standby: Pinch [SCAN EQUIPMENT TELEMETRY] or any 3D hotspot on Unit #04 to localize simulated faults."
+          "Flow choked at PR-204 (140 PSI) is starving TR-309 Relay Core. Pinch [SCAN] or any 3D part to trace fault."
         this.rootCauseText.textFill.color = new vec4(0.90, 0.96, 1.0, 1.0)
       } else if (compRepaired) {
-        this.rootCauseText.text = comp.repairedSummary
+        this.rootCauseText.text = snapshot.xrayMode
+          ? `${comp.repairedSummary} (X-Ray Verified Nominal)`
+          : comp.repairedSummary
         this.rootCauseText.textFill.color = new vec4(0.62, 1.0, 0.80, 1.0)
+      } else if (snapshot.xrayMode || snapshot.focusedXrayHotspot === comp.id) {
+        this.rootCauseText.text = comp.xrayInternalSummary
+        this.rootCauseText.textFill.color = new vec4(0.55, 0.98, 1.0, 1.0)
       } else if (valveLockedOutMidRepair && comp.lockedOutSummary) {
         this.rootCauseText.text = comp.lockedOutSummary
         this.rootCauseText.textFill.color = new vec4(0.65, 0.96, 1.0, 1.0)
@@ -643,12 +654,25 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     // 5. Guided Step Instructions & Smart Training Feedback / Scorecard
     const step = snapshot.currentStep
     if (this.stepHeaderText) {
-      if (snapshot.interlockFlashHotspot) {
+      if (snapshot.phase === "READY_TO_SCAN") {
+        this.stepHeaderText.text = "PHASE 1: SPATIAL TELEMETRY SCAN"
+        this.stepHeaderText.textFill.color = new vec4(0.48, 0.96, 1.0, 1.0)
+      } else if (snapshot.phase === "SCANNING") {
+        this.stepHeaderText.text = "SCANNING CRYOGENIC FLOW LOOP..."
+        this.stepHeaderText.textFill.color = new vec4(1.0, 0.88, 0.36, 1.0)
+      } else if (snapshot.interlockFlashHotspot) {
         this.stepHeaderText.text = `LOTO INTERLOCK -> REDIRECTED TO STEP ${step.stepNumber}/4`
         this.stepHeaderText.textFill.color = new vec4(1.0, 0.42, 0.42, 1.0)
       } else if (snapshot.phase === "COMPLETED") {
         this.stepHeaderText.text = `REPAIR COMPLETE: ${snapshot.traineeGrade} (${snapshot.trainingScorePct}%)`
         this.stepHeaderText.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
+      } else if (
+        snapshot.phase === "DIAGNOSING" &&
+        !snapshot.faultTraceComplete &&
+        snapshot.selectedHotspot !== "valve"
+      ) {
+        this.stepHeaderText.text = `TRACE [${snapshot.faultTraceCount}/3]: ${step.title}`
+        this.stepHeaderText.textFill.color = new vec4(0.48, 0.96, 1.0, 1.0)
       } else {
         const doneTag = snapshot.isCurrentStepDone ? " [DONE]" : ""
         this.stepHeaderText.text = `${step.title}${doneTag}`
@@ -659,12 +683,27 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     }
 
     if (this.stepInstructionText) {
-      if (snapshot.phase === "COMPLETED") {
+      if (snapshot.phase === "READY_TO_SCAN") {
+        this.stepInstructionText.text =
+          "1) Look at pulsing red TR-309 -> 2) Pinch [SCAN EQUIPMENT TELEMETRY] -> 3) Follow 3D chevron upstream."
+      } else if (snapshot.phase === "SCANNING") {
+        this.stepInstructionText.text =
+          "Sweeping CV-101 Intake -> PR-204 Bypass Riser -> TR-309 Thermal Relay Core..."
+      } else if (snapshot.phase === "COMPLETED") {
         this.stepInstructionText.text = snapshot.comparisonFaultPreview
           ? "COMPARISON ACTIVE: Viewing initial fault telemetry (118C, 142 PSI, 18% Flow). Pinch COMPARE to restore nominal view."
-          : "Cryo-Coolant Pump & Relay Unit #04 operating at nominal parameters (42C, 45 PSI, 100% Flow)."
+          : snapshot.whatChangedSummary
+      } else if (
+        snapshot.phase === "DIAGNOSING" &&
+        !snapshot.faultTraceComplete &&
+        snapshot.nextTraceTarget
+      ) {
+        const nextCode = HOTSPOT_CATALOG[snapshot.nextTraceTarget].subsystemCode
+        const dirWord = snapshot.nextTraceTarget === "relay" ? "downstream" : "upstream"
+        this.stepInstructionText.text =
+          `TRACE CAUSE->EFFECT: Pinch 3D [${nextCode}] ${dirWord} (follow 3D chevron) to reveal X-Ray internals, or pinch [CV-101] for Step 1.`
       } else {
-        this.stepInstructionText.text = `${step.actionInstruction} (Pinch 3D target or EXECUTE button)`
+        this.stepInstructionText.text = `${step.actionInstruction} (${step.spatialPinchPrompt})`
       }
     }
 
@@ -672,27 +711,36 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       if (snapshot.interlockFlashHotspot) {
         this.safetyWarningText.text = snapshot.activeFeedbackText
         this.safetyWarningText.textFill.color = new vec4(1.0, 0.44, 0.44, 1.0)
-      } else if (snapshot.phase === "COMPLETED") {
+      } else if (snapshot.phase === "COMPLETED" && !snapshot.comparisonFaultPreview) {
         this.safetyWarningText.text =
-          `TRAINING SCORECARD: ${snapshot.trainingScorePct}% (${snapshot.traineeGrade}) | LOTO Violations: ${snapshot.safetyViolations} | Pinch [COMPARE] to review.`
+          `SCORECARD: ${snapshot.trainingScorePct}% (${snapshot.traineeGrade}) | Trace: ${snapshot.faultTraceCount}/3 | LOTO Blocks: ${snapshot.safetyViolations} | Pinch [COMPARE]`
         this.safetyWarningText.textFill.color = new vec4(0.55, 0.98, 0.75, 1.0)
+      } else if (snapshot.activeFeedbackText) {
+        this.safetyWarningText.text = snapshot.activeFeedbackText
+        this.safetyWarningText.textFill.color = this.severityColor(snapshot.activeFeedbackSeverity)
       } else {
         this.safetyWarningText.text = `${step.safetyWarning} (${step.verificationMetric})`
         this.safetyWarningText.textFill.color = new vec4(1.0, 0.76, 0.32, 1.0)
       }
     }
 
-    // 6. 4-Step Visual Checklist Strip + Progress Bar
+    // 6. 4-Step Visual Checklist Strip + Progress Bar (Progressive Disclosure via uiDisclosureMode)
     if (this.stepChecklistStripText) {
-      const s0 = snapshot.completedSteps[0] ? "OK" : snapshot.currentStepIndex === 0 ? ">>" : ".."
-      const s1 = snapshot.completedSteps[1] ? "OK" : snapshot.currentStepIndex === 1 ? ">>" : ".."
-      const s2 = snapshot.completedSteps[2] ? "OK" : snapshot.currentStepIndex === 2 ? ">>" : ".."
-      const s3 = snapshot.completedSteps[3] ? "OK" : snapshot.currentStepIndex === 3 ? ">>" : ".."
-      this.stepChecklistStripText.text = `[1:LOTO ${s0}]   [2:PURGE ${s1}]   [3:RESEAT ${s2}]   [4:FLOW ${s3}]`
-      this.stepChecklistStripText.textFill.color =
-        snapshot.phase === "COMPLETED"
-          ? new vec4(0.32, 0.98, 0.58, 1.0)
-          : new vec4(0.75, 0.94, 1.0, 1.0)
+      if (snapshot.uiDisclosureMode === "onboarding") {
+        this.stepChecklistStripText.text =
+          "CAUSAL TRACE: [TR-309 SYMPTOM] -> [PR-204 BLOCK] -> [CV-101 CAUSE]"
+        this.stepChecklistStripText.textFill.color = new vec4(0.55, 0.95, 1.0, 1.0)
+      } else {
+        const s0 = snapshot.completedSteps[0] ? "OK" : snapshot.currentStepIndex === 0 ? ">>" : ".."
+        const s1 = snapshot.completedSteps[1] ? "OK" : snapshot.currentStepIndex === 1 ? ">>" : ".."
+        const s2 = snapshot.completedSteps[2] ? "OK" : snapshot.currentStepIndex === 2 ? ">>" : ".."
+        const s3 = snapshot.completedSteps[3] ? "OK" : snapshot.currentStepIndex === 3 ? ">>" : ".."
+        this.stepChecklistStripText.text = `[1:LOTO ${s0}]   [2:PURGE ${s1}]   [3:RESEAT ${s2}]   [4:FLOW ${s3}]`
+        this.stepChecklistStripText.textFill.color =
+          snapshot.phase === "COMPLETED"
+            ? new vec4(0.32, 0.98, 0.58, 1.0)
+            : new vec4(0.75, 0.94, 1.0, 1.0)
+      }
     }
 
     const ratio = snapshot.totalSteps > 0 ? snapshot.completedCount / snapshot.totalSteps : 0
@@ -754,52 +802,107 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
 
     if (this.calloutHeaderText) {
       if (snapshot.comparisonFaultPreview) {
-        this.calloutHeaderText.text = "UNIT #04: BEFORE REPAIR (FAULT VIEW)"
+        this.calloutHeaderText.text = "UNIT #04: BEFORE REPAIR (18% CHOKED FLOW)"
         this.calloutHeaderText.textFill.color = red
       } else if (snapshot.interlockFlashHotspot) {
         this.calloutHeaderText.text = `LOTO BLOCKED: PINCH [${targetCode}] FIRST!`
         this.calloutHeaderText.textFill.color = red
       } else if (snapshot.phase === "COMPLETED") {
-        this.calloutHeaderText.text = "UNIT #04: ALL SUBSYSTEMS NOMINAL"
+        this.calloutHeaderText.text = "UNIT #04: 100% LAMINAR FLOW RESTORED"
         this.calloutHeaderText.textFill.color = green
       } else if (snapshot.phase === "READY_TO_SCAN") {
-        this.calloutHeaderText.text = "UNIT #04: READY FOR SPATIAL SCAN"
+        this.calloutHeaderText.text = "UNIT #04: PINCH [SCAN] TO TRACE FAULT"
+        this.calloutHeaderText.textFill.color = cyan
+      } else if (
+        snapshot.phase === "DIAGNOSING" &&
+        !snapshot.faultTraceComplete &&
+        snapshot.nextTraceTarget
+      ) {
+        const nextCode = HOTSPOT_CATALOG[snapshot.nextTraceTarget].subsystemCode
+        const dirWord = snapshot.nextTraceTarget === "relay" ? "DOWNSTREAM" : "UPSTREAM"
+        this.calloutHeaderText.text =
+          `TRACE FAULT [${snapshot.faultTraceCount}/3]: PINCH 3D [${nextCode}] ${dirWord}`
         this.calloutHeaderText.textFill.color = cyan
       } else {
-        this.calloutHeaderText.text = `UNIT #04: STEP ${snapshot.currentStep.stepNumber}/4 -> PINCH [${targetCode}]`
+        this.calloutHeaderText.text =
+          `STEP ${snapshot.currentStep.stepNumber}/4 -> PINCH 3D [${targetCode}] TO ACTUATE`
         this.calloutHeaderText.textFill.color = amber
       }
     }
 
     if (this.calloutValveText) {
       if (!snapshot.comparisonFaultPreview && (snapshot.completedSteps[3] || snapshot.phase === "COMPLETED")) {
-        this.calloutValveText.text = "CV-101: 100% FLOW [OK]"
+        this.calloutValveText.text = "CV-101: 100% FLOW [NOMINAL]"
         this.calloutValveText.textFill.color = green
       } else if (!snapshot.comparisonFaultPreview && snapshot.completedSteps[0]) {
-        this.calloutValveText.text = "CV-101: LOTO LOCKED (0%)"
+        const actuateStep4 =
+          snapshot.currentStep.targetHotspot === "valve" && !snapshot.isCurrentStepDone
+            ? " [PINCH: STEP 4]"
+            : ""
+        this.calloutValveText.text = `CV-101: LOTO LOCKED (0%)${actuateStep4}`
         this.calloutValveText.textFill.color = cyan
+      } else if (snapshot.phase === "READY_TO_SCAN") {
+        this.calloutValveText.text = "CV-101: 18% FLOW [CAVITATION]"
+        this.calloutValveText.textFill.color = amber
       } else {
-        this.calloutValveText.text = "CV-101: 18% FLOW [WARN]"
-        this.calloutValveText.textFill.color = snapshot.selectedHotspot === "valve" ? cyan : amber
+        const isNextTrace =
+          snapshot.phase === "DIAGNOSING" &&
+          !snapshot.faultTraceComplete &&
+          snapshot.nextTraceTarget === "valve"
+        const isStep1Target =
+          snapshot.currentStep.targetHotspot === "valve" && !snapshot.isCurrentStepDone
+        const tag = isNextTrace
+          ? "[PINCH: TRACE 3]"
+          : isStep1Target
+            ? "[PINCH: LOTO]"
+            : "[CAVITATION]"
+        this.calloutValveText.text = `CV-101: 18% FLOW ${tag}`
+        this.calloutValveText.textFill.color =
+          snapshot.selectedHotspot === "valve" || isNextTrace ? cyan : amber
       }
     }
 
     if (this.calloutRegulatorText) {
       if (!snapshot.comparisonFaultPreview && (snapshot.completedSteps[1] || snapshot.phase === "COMPLETED")) {
-        this.calloutRegulatorText.text = `PR-204: ${snapshot.systemPressurePsi} PSI [REGULATED]`
+        this.calloutRegulatorText.text = `PR-204: ${snapshot.systemPressurePsi} PSI [PURGED OK]`
         this.calloutRegulatorText.textFill.color = green
+      } else if (snapshot.phase === "READY_TO_SCAN") {
+        this.calloutRegulatorText.text = "PR-204: 140 PSI [VAPOR LOCK]"
+        this.calloutRegulatorText.textFill.color = amber
       } else {
-        this.calloutRegulatorText.text = "PR-204: 142 PSI [OVER-PRESSURE]"
-        this.calloutRegulatorText.textFill.color = snapshot.selectedHotspot === "regulator" ? cyan : amber
+        const isNextTrace =
+          snapshot.phase === "DIAGNOSING" &&
+          !snapshot.faultTraceComplete &&
+          snapshot.nextTraceTarget === "regulator"
+        const isStep2Target =
+          snapshot.currentStep.targetHotspot === "regulator" &&
+          snapshot.completedSteps[0] &&
+          !snapshot.completedSteps[1]
+        const tag = isNextTrace
+          ? "[PINCH: TRACE 2]"
+          : isStep2Target
+            ? "[PINCH: PURGE]"
+            : "[142 PSI BLOCK]"
+        this.calloutRegulatorText.text = `PR-204: ${snapshot.systemPressurePsi} PSI ${tag}`
+        this.calloutRegulatorText.textFill.color =
+          snapshot.selectedHotspot === "regulator" || isNextTrace ? cyan : amber
       }
     }
 
     if (this.calloutRelayText) {
       if (!snapshot.comparisonFaultPreview && (snapshot.completedSteps[2] || snapshot.phase === "COMPLETED")) {
-        this.calloutRelayText.text = `TR-309: ${snapshot.systemTempC}C [COOLED]`
+        this.calloutRelayText.text = `TR-309: ${snapshot.systemTempC}C [LATCH RESET]`
         this.calloutRelayText.textFill.color = green
+      } else if (snapshot.phase === "READY_TO_SCAN") {
+        this.calloutRelayText.text = "TR-309: 116C [OVERHEAT SYMPTOM]"
+        this.calloutRelayText.textFill.color = red
       } else {
-        this.calloutRelayText.text = `TR-309: ${snapshot.systemTempC}C [OVERHEAT]`
+        const isStep3Target =
+          snapshot.currentStep.targetHotspot === "relay" &&
+          snapshot.completedSteps[1] &&
+          !snapshot.completedSteps[2]
+        const tag = isStep3Target ? "[PINCH: RESEAT]" : "[OVERHEAT]"
+        this.calloutRelayText.text = `TR-309: ${snapshot.systemTempC}C ${tag}`
         this.calloutRelayText.textFill.color = snapshot.selectedHotspot === "relay" ? cyan : red
       }
     }
@@ -813,9 +916,13 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
   ): void {
     if (!handle) return
     const isSelected = snapshot.selectedHotspot === id
-    handle.label.text = isSelected ? `[ ${baseText} ]` : baseText
+    const isTraced = snapshot.tracedHotspots[id]
+    const traceSuffix = isTraced ? " *" : ""
+    handle.label.text = isSelected ? `[ ${baseText}${traceSuffix} ]` : `${baseText}${traceSuffix}`
     handle.label.textFill.color = isSelected
       ? new vec4(0.45, 0.98, 1.0, 1.0)
-      : new vec4(0.92, 0.96, 1.0, 1.0)
+      : isTraced
+        ? new vec4(0.68, 0.98, 0.85, 1.0)
+        : new vec4(0.92, 0.96, 1.0, 1.0)
   }
 }

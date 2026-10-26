@@ -3,17 +3,18 @@
  * Multi-part procedural 3D Industrial Cryo-Coolant Pump & Relay Unit built with
  * Lens Studio MeshBuilder + SimpleVertexBaseColor material and SIK 3D Interactable hotspots.
  *
- * Includes:
- * - Asymmetric 3D Valve Lever Handle (unmistakable 0 deg / -90 deg LOTO / +90 deg Open silhouette)
- * - 3D Spatial X-Ray / Exploded Internal Sub-Assemblies (ValveInternalCryoSeal, RegulatorInternalDiaphragm, RelayInternalStatorCoil)
- * - Before / After Fault vs. Nominal Spatial Comparison override
- * - LOTO Safety Interlock 3D Red Hazard Flash
+ * Signature Experience Upgrades ("TRACE THE FAULT"):
+ * - 2-Zone Causal Coolant Flow Physics (Upstream Compression/Choke at PR-204 + Vertical Riser Surge + Downstream Starvation at TR-309)
+ * - 3D Vapor-Lock Bottleneck Barrier Ring (FaultBottleneckRing) & Directional Flow Trace Chevrons (CausalFlowBridge)
+ * - 3D Sight-Glass Flow Turbine Impeller (ManifoldFlowImpeller) spinning proportional to real-time flow %
+ * - 3D Pressure Purge Relief Vent Plume (RegulatorPurgePlume) & Thermal Overheat Radiation Crown (RelayOverheatCrown)
+ * - Asymmetric 3D Valve Lever Handle + 3D Spatial X-Ray / Exploded Internal Sub-Assemblies
  * - Strictly adheres to CLAD rules: zero UIKit or Component.Text usage in this 3D module.
  */
 
 import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable"
 import Event, { PublicApi } from "SpectaclesInteractionKit.lspkg/Utils/Event"
-import { DiagnosticPhase, FieldFixUISnapshot, HotspotId } from "./FieldFixState"
+import { DiagnosticPhase, FieldFixUISnapshot, FlowBottleneckStage, HotspotId } from "./FieldFixState"
 
 const DEFAULT_VERTEX_COLOR_MAT = requireAsset(
   "../SimpleVertexBaseColor.lspkg/vertexBaseColorMaterial.mat"
@@ -358,25 +359,39 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private statusBeaconPivot: SceneObject | null = null
   private statusBeaconVisual: RenderMeshVisual | null = null
 
-  // 1. 3D floating target action chevron that hovers over the active step's target component
+  // 1. 3D floating target action chevron that hovers over the next trace or repair target component
   private activeTargetChevronObj: SceneObject | null = null
   private activeTargetChevronVisual: RenderMeshVisual | null = null
   private targetChevronPos: vec3 = new vec3(-6.8, 5.5, 2.4)
   private currentChevronPos: vec3 = new vec3(-6.8, 5.5, 2.4)
 
-  // 2. Animated 3D Cryo-Coolant Flow Pulse Rings travelling through the manifold pipe
+  // 2. 2-Zone Animated 3D Cryo-Coolant Flow Pulse Rings (0..2 Upstream, 3..5 Downstream)
   private coolantFlowRings: SceneObject[] = []
   private coolantFlowVisuals: RenderMeshVisual[] = []
   private flowPhaseOffset: number = 0
+
+  // 3. Signature "TRACE THE FAULT" 3D Cause-and-Effect Visualizers
+  private faultBottleneckRingObj: SceneObject | null = null
+  private faultBottleneckVisual: RenderMeshVisual | null = null
+  private riserPressurePulseObj: SceneObject | null = null
+  private manifoldImpellerObj: SceneObject | null = null
+  private regulatorPurgePlumeObj: SceneObject | null = null
+  private relayOverheatCrownObj: SceneObject | null = null
+  private causalFlowBridgeObj: SceneObject | null = null
 
   // Animation targets & current values
   private currentPhase: DiagnosticPhase = "READY_TO_SCAN"
   private selectedHotspot: HotspotId = "relay"
   private activeStepTargetHotspot: HotspotId = "valve"
+  private flowBottleneckStage: FlowBottleneckStage = "choked_142psi"
   private completedSteps: boolean[] = [false, false, false, false]
+  private previousStep2Done: boolean = false
+  private purgePlumeTimer: number = 0
   private coolantFlowPct: number = 18
   private xrayMode: boolean = false
+  private focusedXrayHotspot: HotspotId | null = null
   private currentXrayBlend: number = 0.0
+  private impellerAngleRad: number = 0
 
   private currentValveAngleDeg: number = 0
   private targetValveAngleDeg: number = 0
@@ -422,6 +437,10 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private flowRingMeshAmber: RenderMesh | null = null
   private flowRingMeshCyan: RenderMesh | null = null
   private flowRingMeshGreen: RenderMesh | null = null
+  private flowRingMeshRed: RenderMesh | null = null
+
+  private bottleneckMeshBlocked: RenderMesh | null = null
+  private bottleneckMeshCleared: RenderMesh | null = null
 
   public onAwake(): void {
     this.buildReusableStateMeshes()
@@ -500,13 +519,26 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     // 3D Manifold Coolant Flow Ring
     const buildFlowRing = (c: RGBA): RenderMesh => {
       const pb = new ProceduralPartBuilder()
-      pb.addCylinderX(0, 0, 0, 1.32, 0.42, 14, c, c)
+      pb.addCylinderX(0, 0, 0, 1.34, 0.46, 14, c, c)
       return pb.buildMesh()
     }
 
-    this.flowRingMeshAmber = buildFlowRing([1.0, 0.72, 0.18, 1.0])
+    this.flowRingMeshAmber = buildFlowRing([1.0, 0.74, 0.18, 1.0])
     this.flowRingMeshCyan = buildFlowRing([0.22, 0.92, 1.0, 1.0])
     this.flowRingMeshGreen = buildFlowRing([0.20, 0.98, 0.56, 1.0])
+    this.flowRingMeshRed = buildFlowRing([1.0, 0.28, 0.22, 1.0])
+
+    // 3D Vapor-Lock Bottleneck Barrier Collar at PR-204 junction
+    const buildBottleneck = (cOuter: RGBA, cInner: RGBA): RenderMesh => {
+      const pb = new ProceduralPartBuilder()
+      pb.addCylinderX(0, 0, 0, 1.68, 0.65, 16, cOuter, cInner)
+      pb.addBox(0, 1.85, 0, 0.55, 0.55, 0.55, cInner, cOuter)
+      pb.addBox(0, -1.85, 0, 0.55, 0.55, 0.55, cInner, cOuter)
+      return pb.buildMesh()
+    }
+
+    this.bottleneckMeshBlocked = buildBottleneck([1.0, 0.22, 0.20, 1.0], [1.0, 0.78, 0.18, 1.0])
+    this.bottleneckMeshCleared = buildBottleneck([0.18, 0.92, 0.58, 1.0], [0.25, 0.96, 1.0, 1.0])
   }
 
   private buildEquipmentHierarchy(): void {
@@ -554,6 +586,48 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
     this.attachMeshVisual(this.baseRoot, chassisPb.buildMesh())
 
+    // 1B. Directional Causal Flow Bridge Chevrons on the manifold (CV-101 -> PR-204 -> TR-309)
+    this.causalFlowBridgeObj = global.scene.createSceneObject("CausalFlowBridge")
+    this.causalFlowBridgeObj.setParent(this.sceneObject)
+    const bridgePb = new ProceduralPartBuilder()
+    const traceCyan: RGBA = [0.25, 0.95, 1.0, 1.0]
+    // Upstream flow arrow markers
+    bridgePb.addBox(-4.6, 1.2, 1.62, 0.85, 0.26, 0.14, traceCyan, traceCyan)
+    bridgePb.addBox(-2.2, 1.2, 1.62, 0.85, 0.26, 0.14, traceCyan, traceCyan)
+    // Downstream flow arrow markers
+    bridgePb.addBox(2.2, 1.2, 1.62, 0.85, 0.26, 0.14, traceCyan, traceCyan)
+    bridgePb.addBox(4.6, 1.2, 1.62, 0.85, 0.26, 0.14, traceCyan, traceCyan)
+    this.attachMeshVisual(this.causalFlowBridgeObj, bridgePb.buildMesh())
+
+    // 1C. 3D Sight-Glass Flow Turbine Impeller at x=-3.4, y=1.2, z=1.68
+    this.manifoldImpellerObj = global.scene.createSceneObject("ManifoldFlowImpeller")
+    this.manifoldImpellerObj.setParent(this.sceneObject)
+    this.manifoldImpellerObj.getTransform().setLocalPosition(new vec3(-3.4, 1.2, 1.68))
+    const impPb = new ProceduralPartBuilder()
+    impPb.addRingZ(0, 0, 0, 0.72, 0.98, 0.22, 16, [0.78, 0.86, 0.95, 1.0])
+    impPb.addBox(0, 0, 0.05, 1.38, 0.24, 0.18, [0.22, 0.96, 1.0, 1.0], [1.0, 0.85, 0.25, 1.0])
+    impPb.addBox(0, 0, 0.05, 0.24, 1.38, 0.18, [0.22, 0.96, 1.0, 1.0], [1.0, 0.85, 0.25, 1.0])
+    this.attachMeshVisual(this.manifoldImpellerObj, impPb.buildMesh())
+
+    // 1D. 3D Vapor-Lock Bottleneck Barrier Collar at x=-0.65, y=1.2, z=0.4
+    this.faultBottleneckRingObj = global.scene.createSceneObject("FaultBottleneckRing")
+    this.faultBottleneckRingObj.setParent(this.sceneObject)
+    this.faultBottleneckRingObj.getTransform().setLocalPosition(new vec3(-0.65, 1.2, 0.4))
+    if (this.bottleneckMeshBlocked) {
+      this.faultBottleneckVisual = this.attachMeshVisual(
+        this.faultBottleneckRingObj,
+        this.bottleneckMeshBlocked
+      )
+    }
+
+    // 1E. Vertical Riser Over-Pressure Surge Ring (climbs y=1.4..4.6 into PR-204)
+    this.riserPressurePulseObj = global.scene.createSceneObject("RiserPressurePulseRing")
+    this.riserPressurePulseObj.setParent(this.sceneObject)
+    this.riserPressurePulseObj.getTransform().setLocalPosition(new vec3(0, 2.8, 0.4))
+    const riserPulsePb = new ProceduralPartBuilder()
+    riserPulsePb.addRingY(0, 0, 0, 1.02, 1.48, 0.34, 16, [1.0, 0.36, 0.18, 1.0])
+    this.attachMeshVisual(this.riserPressurePulseObj, riserPulsePb.buildMesh())
+
     // Overhead Status Beacon on top of the mast
     this.statusBeaconPivot = global.scene.createSceneObject("OverheadStatusBeacon")
     this.statusBeaconPivot.setParent(this.sceneObject)
@@ -562,11 +636,12 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.statusBeaconVisual = this.attachMeshVisual(this.statusBeaconPivot, this.beaconMeshRed)
     }
 
-    // Animated Coolant Flow Pulse Rings along the horizontal manifold pipe (y=1.2, z=0.4)
-    for (let i = 0; i < 3; i++) {
+    // 2-Zone Animated Coolant Flow Pulse Rings (0..2 Upstream [-6.2..-0.9], 3..5 Downstream [+0.9..+6.2])
+    for (let i = 0; i < 6; i++) {
       const ringObj = global.scene.createSceneObject(`CoolantFlowPulseRing_${i}`)
       ringObj.setParent(this.sceneObject)
-      ringObj.getTransform().setLocalPosition(new vec3(-5.0 + i * 5.0, 1.2, 0.4))
+      const initX = i < 3 ? -5.8 + i * 1.8 : 1.2 + (i - 3) * 1.8
+      ringObj.getTransform().setLocalPosition(new vec3(initX, 1.2, 0.4))
       if (this.flowRingMeshAmber) {
         const vis = this.attachMeshVisual(ringObj, this.flowRingMeshAmber)
         this.coolantFlowVisuals.push(vis)
@@ -661,6 +736,17 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.attachMeshVisual(this.regulatorInternalObj, regIntPb.buildMesh())
     this.regulatorInternalObj.enabled = false
 
+    // 3D Upward Relief Vent Plume on PR-204 (bursts when Step 2 purges 142 PSI -> 38 PSI)
+    this.regulatorPurgePlumeObj = global.scene.createSceneObject("RegulatorPurgePlume")
+    this.regulatorPurgePlumeObj.setParent(this.regulatorHotspotRoot)
+    this.regulatorPurgePlumeObj.getTransform().setLocalPosition(new vec3(0, 2.2, 0))
+    const plumePb = new ProceduralPartBuilder()
+    plumePb.addRingY(0, 0.0, 0, 0.35, 0.85, 0.22, 14, [0.65, 0.98, 1.0, 1.0])
+    plumePb.addRingY(0, 0.85, 0, 0.65, 1.35, 0.22, 14, [0.45, 0.95, 1.0, 1.0])
+    plumePb.addRingY(0, 1.75, 0, 0.95, 1.85, 0.18, 14, [0.85, 1.0, 1.0, 1.0])
+    this.attachMeshVisual(this.regulatorPurgePlumeObj, plumePb.buildMesh())
+    this.regulatorPurgePlumeObj.enabled = false
+
     // Articulated Gauge Needle Pivot
     this.gaugeNeedlePivot = global.scene.createSceneObject("GaugeNeedlePivot")
     this.gaugeNeedlePivot.setParent(this.regulatorHotspotRoot)
@@ -701,6 +787,15 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     }
     this.attachMeshVisual(this.relayInternalObj, relayIntPb.buildMesh())
     this.relayInternalObj.enabled = false
+
+    // 3D Thermal Overheat Radiation Crown on TR-309 (pulses crimson while core is overheated at 118C)
+    this.relayOverheatCrownObj = global.scene.createSceneObject("RelayOverheatCrown")
+    this.relayOverheatCrownObj.setParent(this.relayHotspotRoot)
+    this.relayOverheatCrownObj.getTransform().setLocalPosition(new vec3(0, 2.5, -1.1))
+    const crownPb = new ProceduralPartBuilder()
+    crownPb.addRingY(0, 0, 0, 1.85, 2.45, 0.22, 18, [1.0, 0.22, 0.18, 1.0])
+    crownPb.addRingY(0, 0.65, 0, 1.45, 1.95, 0.18, 18, [1.0, 0.55, 0.16, 1.0])
+    this.attachMeshVisual(this.relayOverheatCrownObj, crownPb.buildMesh())
 
     // Articulated Thermal Relay Core Pivot
     this.relayCorePivot = global.scene.createSceneObject("ThermalRelayCorePivot")
@@ -770,20 +865,43 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.currentPhase = snapshot.phase
     this.selectedHotspot = snapshot.selectedHotspot
     this.activeStepTargetHotspot = snapshot.currentStep.targetHotspot
-    this.completedSteps = snapshot.comparisonFaultPreview
+    this.flowBottleneckStage = snapshot.flowBottleneckStage
+    const newCompleted = snapshot.comparisonFaultPreview
       ? [false, false, false, false]
       : [...snapshot.completedSteps]
+
+    // Trigger 3D upward vapor relief plume when Step 2 (Regulator Purge) transitions to completed
+    if (snapshot.phase === "READY_TO_SCAN") {
+      this.purgePlumeTimer = 0
+      this.interlockFlashTimers = { valve: 0, regulator: 0, relay: 0 }
+      if (this.regulatorPurgePlumeObj) {
+        this.regulatorPurgePlumeObj.enabled = false
+      }
+    } else if (newCompleted[1] && !this.previousStep2Done && !snapshot.comparisonFaultPreview) {
+      this.purgePlumeTimer = 1.8
+    }
+    this.previousStep2Done = newCompleted[1]
+    this.completedSteps = newCompleted
+
     this.coolantFlowPct = snapshot.coolantFlowPct
     this.xrayMode = snapshot.xrayMode
+    this.focusedXrayHotspot = snapshot.focusedXrayHotspot
 
     if (snapshot.interlockFlashHotspot) {
       this.interlockFlashTimers[snapshot.interlockFlashHotspot] = 0.95
     }
 
-    // Enable or disable 3D X-Ray internal sub-assemblies
-    if (this.valveInternalObj) this.valveInternalObj.enabled = this.xrayMode
-    if (this.regulatorInternalObj) this.regulatorInternalObj.enabled = this.xrayMode
-    if (this.relayInternalObj) this.relayInternalObj.enabled = this.xrayMode
+    // Enable 3D X-Ray internal sub-assemblies when global X-Ray is on OR during SCANNING OR for the traced hotspot
+    const showAllXray = this.xrayMode || snapshot.phase === "SCANNING"
+    if (this.valveInternalObj) {
+      this.valveInternalObj.enabled = showAllXray || this.focusedXrayHotspot === "valve"
+    }
+    if (this.regulatorInternalObj) {
+      this.regulatorInternalObj.enabled = showAllXray || this.focusedXrayHotspot === "regulator"
+    }
+    if (this.relayInternalObj) {
+      this.relayInternalObj.enabled = showAllXray || this.focusedXrayHotspot === "relay"
+    }
 
     if (snapshot.phase === "SCANNING") {
       this.scanTimer = 0
@@ -792,6 +910,23 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       }
     } else if (this.scanRingObj) {
       this.scanRingObj.enabled = false
+    }
+
+    // Update 3D Vapor-Lock Bottleneck Collar & Vertical Riser Surge visibility
+    const isRegulatorBlocked = !this.completedSteps[1]
+    if (this.faultBottleneckVisual) {
+      const targetMesh = isRegulatorBlocked ? this.bottleneckMeshBlocked : this.bottleneckMeshCleared
+      if (targetMesh) {
+        this.faultBottleneckVisual.mesh = targetMesh
+      }
+    }
+    if (this.riserPressurePulseObj) {
+      this.riserPressurePulseObj.enabled = isRegulatorBlocked
+    }
+
+    // Update 3D Thermal Overheat Crown visibility on TR-309
+    if (this.relayOverheatCrownObj) {
+      this.relayOverheatCrownObj.enabled = !this.completedSteps[2]
     }
 
     // Target mechanical articulations from completed steps (or comparison override):
@@ -808,8 +943,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.lotoSafetyClaspObj.enabled = this.completedSteps[0] && !this.completedSteps[3]
     }
 
-    // Step 2 (Regulator Purge): in right-handed +Z space, +48 deg points left (red danger marker at x=-0.95)
-    // and -38 deg points right (green nominal marker at x=+0.95).
+    // Step 2 (Regulator Purge): +48 deg points left (red 142 PSI danger marker) and -38 deg points right (green 38 PSI marker)
     this.targetGaugeAngleDeg = this.completedSteps[1] ? -38 : 48
 
     // Step 3 (Relay Core Reseat): retracts relay core from +1.35 cm down to 0.0 cm & rotates latch 45 deg
@@ -836,36 +970,45 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       }
     }
 
-    // Update 3D Active Step Target Pointer position & color
+    // Update 3D Active Step Target Pointer position & color:
+    // - During DIAGNOSING while tracing upstream (nextTraceTarget !== null), lead the user upstream: relay -> regulator -> valve!
+    // - Once traced or in REPAIRING, point at activeStepTargetHotspot (Step 1..4).
     if (!snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED") {
       this.targetChevronPos = new vec3(0, 10.2, 1.8)
       if (this.activeTargetChevronVisual && this.chevronMeshGreen) {
         this.activeTargetChevronVisual.mesh = this.chevronMeshGreen
       }
     } else {
-      const targetId = snapshot.phase === "READY_TO_SCAN" ? snapshot.selectedHotspot : this.activeStepTargetHotspot
+      let targetId: HotspotId = this.activeStepTargetHotspot
+      if (snapshot.phase === "READY_TO_SCAN") {
+        targetId = "relay"
+      } else if (snapshot.phase === "DIAGNOSING" && snapshot.nextTraceTarget !== null) {
+        targetId = snapshot.nextTraceTarget
+      }
       if (targetId === "valve") {
-        this.targetChevronPos = new vec3(-6.8, 5.6, 2.4)
+        this.targetChevronPos = new vec3(-6.8, 6.9, 2.4)
       } else if (targetId === "regulator") {
-        this.targetChevronPos = new vec3(0, 10.0, 1.8)
+        this.targetChevronPos = new vec3(0, 10.6, 1.8)
       } else {
-        this.targetChevronPos = new vec3(6.8, 6.0, 2.0)
+        this.targetChevronPos = new vec3(6.8, 7.0, 2.0)
       }
       if (this.activeTargetChevronVisual && this.chevronMeshCyan) {
         this.activeTargetChevronVisual.mesh = this.chevronMeshCyan
       }
     }
 
-    // Update Coolant Flow Ring colors
-    const targetFlowMesh =
-      !snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED"
-        ? this.flowRingMeshGreen
-        : this.completedSteps[0]
-          ? this.flowRingMeshCyan
-          : this.flowRingMeshAmber
-    if (targetFlowMesh) {
-      for (const vis of this.coolantFlowVisuals) {
-        vis.mesh = targetFlowMesh
+    // Update 2-Zone Coolant Flow Ring colors (Upstream 0..2 vs Downstream 3..5)
+    for (let i = 0; i < this.coolantFlowVisuals.length; i++) {
+      const vis = this.coolantFlowVisuals[i]
+      if (!snapshot.comparisonFaultPreview && snapshot.phase === "COMPLETED" && this.flowRingMeshGreen) {
+        vis.mesh = this.flowRingMeshGreen
+      } else if (this.completedSteps[0] && this.flowRingMeshCyan) {
+        vis.mesh = this.flowRingMeshCyan
+      } else if (i >= 3 && this.flowRingMeshRed) {
+        // Downstream starved droplets glow dim red/amber before repair
+        vis.mesh = this.flowRingMeshRed
+      } else if (this.flowRingMeshAmber) {
+        vis.mesh = this.flowRingMeshAmber
       }
     }
 
@@ -881,7 +1024,23 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       if (!snapshot.comparisonFaultPreview && (snapshot.phase === "COMPLETED" || isRepaired)) {
         return this.haloMeshGreen
       }
-      if (snapshot.selectedHotspot === id || snapshot.currentStep.targetHotspot === id) {
+      // During READY_TO_SCAN onboarding, keep TR-309 crimson (overheat symptom) and CV-101 / PR-204 amber (fault warnings)
+      if (snapshot.phase === "READY_TO_SCAN" && !snapshot.comparisonFaultPreview) {
+        return id === "relay" ? this.haloMeshRed : this.haloMeshAmber
+      }
+      // Keep TR-309 critical overheat halo crimson red unless it is actively the current repair target
+      if (id === "relay" && snapshot.currentStep.targetHotspot !== "relay") {
+        return this.haloMeshRed
+      }
+      if (
+        snapshot.phase === "DIAGNOSING" &&
+        !snapshot.faultTraceComplete &&
+        snapshot.nextTraceTarget !== null
+      ) {
+        if (snapshot.selectedHotspot === id || snapshot.nextTraceTarget === id) {
+          return this.haloMeshCyan
+        }
+      } else if (snapshot.selectedHotspot === id || snapshot.currentStep.targetHotspot === id) {
         return this.haloMeshCyan
       }
       if (id === "relay") {
@@ -914,15 +1073,36 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     const lerpFactor = Math.min(1.0, clampedDt * 6.5)
 
     // Smoothly blend 3D Spatial X-Ray Exploded View factor (0.0 -> 1.0)
-    const targetXray = this.xrayMode ? 1.0 : 0.0
+    const anyXrayActive =
+      this.xrayMode || this.currentPhase === "SCANNING" || this.focusedXrayHotspot !== null
+    const targetXray = anyXrayActive ? 1.0 : 0.0
     this.currentXrayBlend += (targetXray - this.currentXrayBlend) * lerpFactor
+
+    const valveXrayFactor =
+      this.currentPhase === "SCANNING" || this.selectedHotspot === "valve"
+        ? this.currentXrayBlend
+        : this.xrayMode
+          ? this.currentXrayBlend * 0.36
+          : 0.0
+    const regXrayFactor =
+      this.currentPhase === "SCANNING" || this.selectedHotspot === "regulator"
+        ? this.currentXrayBlend
+        : this.xrayMode
+          ? this.currentXrayBlend * 0.36
+          : 0.0
+    const relayXrayFactor =
+      this.currentPhase === "SCANNING" || this.selectedHotspot === "relay"
+        ? this.currentXrayBlend
+        : this.xrayMode
+          ? this.currentXrayBlend * 0.36
+          : 0.0
 
     // 1. Animate Valve Handwheel rotation + X-Ray axial Z-explosion
     this.currentValveAngleDeg += (this.targetValveAngleDeg - this.currentValveAngleDeg) * lerpFactor
     if (this.valveWheelPivot) {
       this.valveWheelPivot
         .getTransform()
-        .setLocalPosition(new vec3(-0.85 * this.currentXrayBlend, -0.65 * this.currentXrayBlend, 0.5 + this.currentXrayBlend * 1.65))
+        .setLocalPosition(new vec3(-0.85 * valveXrayFactor, -0.65 * valveXrayFactor, 0.5 + valveXrayFactor * 1.65))
       this.valveWheelPivot
         .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0, 0, (this.currentValveAngleDeg * Math.PI) / 180))
@@ -930,7 +1110,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     if (this.valveInternalObj && this.valveInternalObj.enabled) {
       this.valveInternalObj
         .getTransform()
-        .setLocalPosition(new vec3(0, 2.75 * this.currentXrayBlend, 1.45 * this.currentXrayBlend))
+        .setLocalPosition(new vec3(0, 2.75 * valveXrayFactor, 1.45 * valveXrayFactor))
       this.valveInternalObj
         .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0.35, this.elapsedTime * 1.8, 0))
@@ -942,7 +1122,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     if (this.gaugeNeedlePivot) {
       this.gaugeNeedlePivot
         .getTransform()
-        .setLocalPosition(new vec3(0, -0.2, 0.42 + this.currentXrayBlend * 1.35))
+        .setLocalPosition(new vec3(0, -0.2, 0.42 + regXrayFactor * 1.35))
       this.gaugeNeedlePivot
         .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0, 0, ((this.currentGaugeAngleDeg + jitter) * Math.PI) / 180))
@@ -950,7 +1130,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     if (this.regulatorInternalObj && this.regulatorInternalObj.enabled) {
       this.regulatorInternalObj
         .getTransform()
-        .setLocalPosition(new vec3(0, 2.85 * this.currentXrayBlend, 1.45 * this.currentXrayBlend))
+        .setLocalPosition(new vec3(0, 2.85 * regXrayFactor, 1.45 * regXrayFactor))
       this.regulatorInternalObj
         .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0.25, -this.elapsedTime * 1.6, 0))
@@ -964,7 +1144,11 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.relayCorePivot
         .getTransform()
         .setLocalPosition(
-          new vec3(0.75 * this.currentXrayBlend, this.currentRelayLiftCm + thermalBob - 0.45 * this.currentXrayBlend, -1.2 - this.currentXrayBlend * 0.65)
+          new vec3(
+            0.75 * relayXrayFactor,
+            this.currentRelayLiftCm + thermalBob - 0.45 * relayXrayFactor,
+            -1.2 - relayXrayFactor * 0.65
+          )
         )
       this.relayCorePivot
         .getTransform()
@@ -973,7 +1157,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     if (this.relayInternalObj && this.relayInternalObj.enabled) {
       this.relayInternalObj
         .getTransform()
-        .setLocalPosition(new vec3(0, 3.15 * this.currentXrayBlend, 1.45 * this.currentXrayBlend))
+        .setLocalPosition(new vec3(0, 3.15 * relayXrayFactor, 1.45 * relayXrayFactor))
       this.relayInternalObj
         .getTransform()
         .setLocalRotation(quat.fromEulerAngles(0.3, this.elapsedTime * 2.1, 0))
@@ -991,34 +1175,131 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
         .setLocalRotation(quat.fromEulerAngles(0, this.elapsedTime * 2.2, 0))
     }
 
-    // 5. Animate 3D Coolant Flow Pulse Rings along the manifold pipe (-6.0 to +6.0)
-    const flowSpeed = this.coolantFlowPct <= 0 ? 0.0 : this.coolantFlowPct >= 90 ? 7.5 : 2.2
-    this.flowPhaseOffset = (this.flowPhaseOffset + clampedDt * flowSpeed) % 12.0
-    for (let i = 0; i < this.coolantFlowRings.length; i++) {
-      const ring = this.coolantFlowRings[i]
-      const offset = (this.flowPhaseOffset + i * 4.0) % 12.0
-      const xPos = -6.0 + offset
-      ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
-      const pulseScale = this.coolantFlowPct <= 0 ? 0.85 : 1.0 + Math.sin(this.elapsedTime * 6.0 + i) * 0.08
-      ring.getTransform().setLocalScale(new vec3(1.0, pulseScale, pulseScale))
+    // 5. Animate 2-Zone Causal Coolant Flow Rings, Bottleneck Barrier, Riser Pulse & Sight-Glass Impeller
+    this.animateCausalFlowSystem(clampedDt)
+
+    // 6. Animate Pressure Purge Plume & Thermal Overheat Crown
+    if (this.regulatorPurgePlumeObj) {
+      if (this.purgePlumeTimer > 0) {
+        this.purgePlumeTimer = Math.max(0, this.purgePlumeTimer - clampedDt)
+        this.regulatorPurgePlumeObj.enabled = true
+        const prog = 1.0 - this.purgePlumeTimer / 1.8
+        this.regulatorPurgePlumeObj
+          .getTransform()
+          .setLocalPosition(new vec3(0, 2.0 + prog * 2.6, 0))
+        const s = 0.8 + prog * 0.75
+        this.regulatorPurgePlumeObj.getTransform().setLocalScale(new vec3(s, 1.0 + prog * 0.5, s))
+      } else {
+        this.regulatorPurgePlumeObj.enabled = false
+      }
     }
 
-    // 6. Pulse selected hotspot halo for immediate spatial guidance
+    if (this.relayOverheatCrownObj && this.relayOverheatCrownObj.enabled) {
+      const heatPulse = 1.0 + Math.sin(this.elapsedTime * 9.0) * 0.14
+      this.relayOverheatCrownObj.getTransform().setLocalScale(new vec3(heatPulse, 1.0, heatPulse))
+      this.relayOverheatCrownObj
+        .getTransform()
+        .setLocalRotation(quat.fromEulerAngles(0, -this.elapsedTime * 2.4, 0))
+    }
+
+    // 7. Pulse selected hotspot halo for immediate spatial guidance
     this.pulseHalo(this.valveHaloObj, "valve", clampedDt)
     this.pulseHalo(this.regulatorHaloObj, "regulator", clampedDt)
     this.pulseHalo(this.relayHaloObj, "relay", clampedDt)
 
-    // 7. Animate Scan Sweep Ring if active
+    // 8. Animate Scan Sweep Ring if active
     if (this.scanRingObj && this.scanRingObj.enabled) {
       this.scanTimer += clampedDt
       const sweepY = -4.2 + Math.sin(this.scanTimer * 4.8) * 6.2
       this.scanRingObj.getTransform().setLocalPosition(new vec3(0, sweepY, 0))
     }
 
-    // 8. Pulse overhead status beacon
+    // 9. Pulse overhead status beacon
     if (this.statusBeaconPivot) {
       const pulse = 1.0 + Math.sin(this.elapsedTime * 4.5) * 0.08
       this.statusBeaconPivot.getTransform().setLocalScale(new vec3(pulse, pulse, pulse))
+    }
+  }
+
+  private animateCausalFlowSystem(clampedDt: number): void {
+    // A. Rotate Sight-Glass Turbine Impeller proportional to simulated flow
+    if (this.manifoldImpellerObj) {
+      const impellerSpeed =
+        this.flowBottleneckStage === "nominal_100pct"
+          ? 14.0
+          : this.flowBottleneckStage === "choked_142psi"
+            ? 2.4 + Math.sin(this.elapsedTime * 12.0) * 1.4
+            : 0.0
+      this.impellerAngleRad = (this.impellerAngleRad + clampedDt * impellerSpeed) % (Math.PI * 2)
+      this.manifoldImpellerObj
+        .getTransform()
+        .setLocalRotation(quat.fromEulerAngles(0, 0, this.impellerAngleRad))
+    }
+
+    // B. Pulse Vapor-Lock Bottleneck Barrier at x=-0.65
+    if (this.faultBottleneckRingObj) {
+      const isBlocked =
+        this.flowBottleneckStage === "choked_142psi" ||
+        this.flowBottleneckStage === "isolated_trapped_psi"
+      const bScale = isBlocked ? 1.06 + Math.sin(this.elapsedTime * 11.0) * 0.12 : 0.88
+      this.faultBottleneckRingObj.getTransform().setLocalScale(new vec3(1.0, bScale, bScale))
+    }
+
+    // C. Animate Vertical Riser Over-Pressure Surge Ring (climbs y=1.5..4.6 into PR-204)
+    if (this.riserPressurePulseObj && this.riserPressurePulseObj.enabled) {
+      const riserT = (this.elapsedTime * 1.9) % 1.0
+      const riserY = 1.5 + riserT * 3.1
+      const riserScale = 0.9 + Math.sin(riserT * Math.PI) * 0.25
+      this.riserPressurePulseObj.getTransform().setLocalPosition(new vec3(0, riserY, 0.4))
+      this.riserPressurePulseObj
+        .getTransform()
+        .setLocalScale(new vec3(riserScale, 1.0, riserScale))
+    }
+
+    // D. Animate 6 Manifold Coolant Flow Pulse Rings across Upstream (0..2) and Downstream (3..5)
+    if (this.flowBottleneckStage === "nominal_100pct") {
+      // Full 100% laminar flow across the entire manifold (-6.2 to +6.2)
+      this.flowPhaseOffset = (this.flowPhaseOffset + clampedDt * 8.2) % 12.4
+      for (let i = 0; i < this.coolantFlowRings.length; i++) {
+        const ring = this.coolantFlowRings[i]
+        const offset = (this.flowPhaseOffset + i * (12.4 / 6)) % 12.4
+        const xPos = -6.2 + offset
+        ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
+        const pulseScale = 1.04 + Math.sin(this.elapsedTime * 7.0 + i) * 0.08
+        ring.getTransform().setLocalScale(new vec3(1.0, pulseScale, pulseScale))
+      }
+    } else if (this.flowBottleneckStage === "choked_142psi") {
+      // Upstream (0..2): travels from CV-101 (-6.2) and slams/compresses into the PR-204 blockage (-0.95)
+      this.flowPhaseOffset = (this.flowPhaseOffset + clampedDt * 3.2) % 5.2
+      for (let i = 0; i < 3; i++) {
+        const ring = this.coolantFlowRings[i]
+        const rawT = ((this.flowPhaseOffset + i * 1.73) % 5.2) / 5.2
+        // Non-linear deceleration/bunching near the blockage at x = -0.95
+        const easedT = 1.0 - Math.pow(1.0 - rawT, 1.85)
+        const xPos = -6.2 + easedT * 5.25
+        const impactScale = 0.92 + easedT * 0.28
+        ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
+        ring.getTransform().setLocalScale(new vec3(1.0 - easedT * 0.35, impactScale, impactScale))
+      }
+      // Downstream (3..5): starved droplets crawl from +0.8 to +4.2 and shrink/evaporate before reaching TR-309 (+6.8)!
+      for (let i = 3; i < this.coolantFlowRings.length; i++) {
+        const ring = this.coolantFlowRings[i]
+        const idx = i - 3
+        const starveT = ((this.elapsedTime * 0.55 + idx * 0.33) % 1.0)
+        const xPos = 0.85 + starveT * 3.6
+        const shrinkScale = Math.max(0.18, (1.0 - starveT) * 0.58)
+        ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
+        ring.getTransform().setLocalScale(new vec3(shrinkScale, shrinkScale, shrinkScale))
+      }
+    } else {
+      // LOTO Isolated (0% intake flow during Steps 1..3): upstream intake halted; downstream drained
+      for (let i = 0; i < this.coolantFlowRings.length; i++) {
+        const ring = this.coolantFlowRings[i]
+        const xPos = i < 3 ? -5.6 + i * 1.8 : 1.4 + (i - 3) * 1.6
+        const parkedScale = i < 3 ? 0.38 : 0.16
+        ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
+        ring.getTransform().setLocalScale(new vec3(parkedScale, parkedScale, parkedScale))
+      }
     }
   }
 

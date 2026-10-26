@@ -10,16 +10,16 @@
 
 When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Relay Unit (`Unit #04`)**, FieldFix AR anchors a multi-part, articulated 3D equipment assembly on the left and a companion `SpectaclesUIKit` diagnostic and repair checklist on the right at workbench depth (`z = -110 cm`). Using far-field hand-pinch gestures (`SpectaclesInteractionKit`), the user can:
 
-1. **Run a Simulated Equipment Telemetry Scan (`SCAN EQUIPMENT TELEMETRY`):**
-   Sweeps a volumetric dual-beam 3D laser ring (`LaserScanSweepRing`) across the 3D machine to localize three simulated subsystem faults linked to the physical housing by **3D Callout Leader Struts**:
-   - **CV-101 Primary Coolant Isolation Valve** — `WARN: FLOW RESTRICTED (18%)`
-   - **PR-204 High-Pressure Bypass Regulator** — `FAULT: OVER-PRESSURE (142 PSI)`
-   - **TR-309 Thermal Relay Core Assembly** — `CRITICAL: CORE OVERHEAT (118°C)`
+1. **Run a Simulated Equipment Telemetry Scan & "TRACE THE FAULT" Upstream Discovery (`SCAN EQUIPMENT TELEMETRY`):**
+   Sweeps a volumetric dual-beam 3D laser ring (`LaserScanSweepRing`) across the 3D machine to start a **reverse-causal 3D fault trace** across three subsystems linked to the physical housing by **3D Callout Leader Struts** and **2-Zone Coolant Flow Pulse Rings**:
+   - **Symptom (`TR-309` Thermal Relay Core Assembly — Trace 1/3):** `CRITICAL: CORE OVERHEAT (118°C)` — starved by choked downstream coolant trickle (`RelayOverheatCrown`).
+   - **Bottleneck (`PR-204` High-Pressure Bypass Regulator — Trace 2/3):** `FAULT: OVER-PRESSURE (142 PSI)` — pinching `PR-204` upstream automatically activates localized 3D X-Ray Cutaway (`RegulatorInternalDiaphragm`) to reveal the vapor-locked relief spring (`FaultBottleneckRing`).
+   - **Root Cause (`CV-101` Primary Coolant Isolation Valve — Trace 3/3):** `WARN: FLOW RESTRICTED (18%)` — pinching `CV-101` upstream exposes the fouled internal cryo-ball seal (`ValveInternalCryoSeal`) and unlocks Step 1/4 (`LOTO Isolation`).
 
-2. **Toggle 3D Spatial X-Ray / Exploded Cutaway Mode (`X-RAY CUTAWAY`):**
-   Pinching `X-RAY CUTAWAY` explodes three internal 3D procedural sub-assemblies (`y = +2.75..3.15 cm, z = +1.45 cm`) out of the outer housings and rotates them in real time so trainees can see *inside* the machine before touching a wrench:
+2. **Toggle 3D Spatial X-Ray / Localized Exploded Cutaway Mode (`X-RAY CUTAWAY`):**
+   Pinching an upstream component during the fault trace (or pinching `X-RAY CUTAWAY`) explodes internal 3D procedural sub-assemblies (`1.0x` full lift on the focused component, `0.36x` tucked preview on non-selected components) and rotates them in real time so trainees can see *inside* the machine before touching a wrench:
    - **`ValveInternalCryoSeal` (`CV-101`):** Internal cryo-seal gate & bypass port (`18%` choked flow -> `0%` LOTO sealed -> `100%` full-bore laminar flow).
-   - **`RegulatorInternalDiaphragm` (`PR-204`):** Internal spring diaphragm & relief poppet (`142 PSI` compressed -> `38 PSI` vented equilibrium).
+   - **`RegulatorInternalDiaphragm` (`PR-204`):** Internal spring diaphragm & relief poppet (`142 PSI` compressed -> `38 PSI` vented equilibrium with upward `RegulatorPurgePlume`).
    - **`RelayInternalStatorCoil` (`TR-309`):** Internal copper stator windings & magnetic plunger latch (`118°C` tripped -> `46°C` reseated).
 
 3. **Experience Sequential Industrial LOTO Safety Interlock Enforcement:**
@@ -59,20 +59,22 @@ FieldFix-AR/
 ├── LICENSE                               # MIT License (with Third-Party Snap Package notices)
 ├── README.md                             # Project documentation & setup instructions
 ├── devpost/
-│   ├── FieldFix-AR-Demo.mp4              # 120.0s (2m 00s) 1080p 30fps narrated demo video
+│   ├── FieldFix-AR-Demo-V5-TraceTheFault.mp4 # 120.0s V5 "TRACE THE FAULT" signature candidate video
+│   ├── FieldFix-AR-Demo.mp4              # Preserved V4 approved 120.0s demo video
+│   ├── SIGNATURE_EXPERIENCE_PROPOSAL.md  # Phase 1 "TRACE THE FAULT" spatial architecture & design spec
 │   ├── build_demo_video.py               # Reproducible ffmpeg + voiceover video assembly script
 │   ├── design-brief.md                   # Official plan-lens AR design brief (status: approved)
 │   ├── SUBMISSION.md                     # Ready-to-paste Devpost & YouTube submission copy
 │   ├── COMPLIANCE_CHECKLIST.md           # Competition rule, accuracy & security audit checklist
-│   ├── VERIFICATION_REPORT.md            # Real SIK PreviewInteractTool, 4/4 LEAF & audit report
+│   ├── VERIFICATION_REPORT.md            # Real SIK PreviewInteractTool, 5/5 LEAF & V4 vs V5 critique report
 │   ├── FIRST_PLACE_CAMPAIGN_PLAN.md      # Competitive engineering campaign plan & milestones
 │   ├── QUALITY_CAMPAIGN_LOG.md           # Timestamped engineering, QA & verification log
 │   └── screenshots/                      # High-res 1392x1910 & full-editor PNG captures
 ├── Assets/
 │   ├── Scripts/
-│   │   ├── FieldFixState.ts              # State machine, LOTO interlock, X-Ray, Comparison & Scorecard
-│   │   ├── FieldFixEquipmentMesh.ts      # Procedural MeshBuilder 3D unit, X-Ray internals, lever & hotspots
-│   │   ├── FieldFixDiagnosticUI.ts       # SpectaclesUIKit Frame, 9 Buttons, ProgressBar, Checklist & Callouts
+│   │   ├── FieldFixState.ts              # State machine, Trace-The-Fault, LOTO interlock, X-Ray, Comparison & Scorecard
+│   │   ├── FieldFixEquipmentMesh.ts      # Procedural MeshBuilder 3D unit, 2-zone flow, X-Ray internals, lever & hotspots
+│   │   ├── FieldFixDiagnosticUI.ts       # Progressive-disclosure SpectaclesUIKit Frame, 9 Buttons, ProgressBar & Callouts
 │   │   ├── FieldFixAudioController.ts    # Spatial audio playback controller
 │   │   └── FieldFixMain.ts               # Experience coordinator (direct 3D hotspot + UIKit execution)
 │   ├── Tests/
@@ -81,7 +83,8 @@ FieldFix-AR/
 │   │   ├── FieldFixMidRepairShowcaseScenario.ts # Scenario 2: FieldFixMidRepairShowcaseScenario
 │   │   ├── FieldFixResetAndReplayScenario.ts    # Scenario 3: FieldFixResetAndReplayScenario
 │   │   ├── FieldFixAdversarialSafetyAndXRayScenario.ts # Scenario 4: Adversarial LOTO Interlock, X-Ray & Comparison
-│   │   └── LeafIndex.ts                  # @scenariosIndex registration for all 4 LEAF scenarios
+│   │   ├── FieldFixTraceTheFaultSignatureScenario.ts   # Scenario 5: Signature "TRACE THE FAULT" causal discovery & Auto-X-Ray
+│   │   └── LeafIndex.ts                  # @scenariosIndex registration for all 5 LEAF scenarios
 │   ├── GeneratedSFX/                     # 44.1 kHz WAV cues synthesized via CLAD /build-sfx
 │   │   ├── ButtonClick.wav
 │   │   ├── ScanSweep.wav
@@ -120,11 +123,12 @@ FieldFix-AR/
 
 ### Running Automated LEAF Tests
 1. In Lens Studio, open the **LEAF Panel** (or invoke `run_leaf_scenario` via Lens Studio MCP).
-2. Run all 4 registered scenarios from `Assets/Tests/LeafIndex.ts`:
+2. Run all 5 registered scenarios from `Assets/Tests/LeafIndex.ts`:
    - **`FieldFixFullDiagnosticRepairScenario`**
    - **`FieldFixMidRepairShowcaseScenario`**
    - **`FieldFixResetAndReplayScenario`**
    - **`FieldFixAdversarialSafetyAndXRayScenario`**
+   - **`FieldFixTraceTheFaultSignatureScenario`**
 
 ---
 
