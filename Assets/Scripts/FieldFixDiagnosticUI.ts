@@ -812,7 +812,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       this.progressLabelText.text = `${snapshot.completedCount} / ${snapshot.totalSteps} DONE`
     }
 
-    // 7. Primary Action Button Label
+    // 7. Primary Action Button Label (Progressive Discovery: guide upstream trace until 3/3 complete)
     if (this.btnPrimaryAction) {
       if (snapshot.phase === "READY_TO_SCAN") {
         this.btnPrimaryAction.label.text = "SCAN EQUIPMENT TELEMETRY"
@@ -823,6 +823,16 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       } else if (snapshot.phase === "COMPLETED") {
         this.btnPrimaryAction.label.text = `VERIFIED NOMINAL (${snapshot.trainingScorePct}% SCORE)`
         this.btnPrimaryAction.label.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
+      } else if (
+        snapshot.phase === "DIAGNOSING" &&
+        !snapshot.faultTraceComplete &&
+        snapshot.completedCount === 0 &&
+        !snapshot.comparisonFaultPreview
+      ) {
+        this.btnPrimaryAction.label.text = !snapshot.tracedHotspots.regulator
+          ? "TRACE UPSTREAM: INSPECT [PR-204]"
+          : "TRACE UPSTREAM: INSPECT [CV-101]"
+        this.btnPrimaryAction.label.textFill.color = new vec4(0.55, 0.98, 1.0, 1.0)
       } else if (snapshot.isCurrentStepDone) {
         this.btnPrimaryAction.label.text = `STEP ${step.stepNumber} VERIFIED (ADVANCE)`
         this.btnPrimaryAction.label.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
@@ -873,6 +883,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         this.calloutHeaderText.textFill.color = green
       } else if (snapshot.phase === "READY_TO_SCAN") {
         this.calloutHeaderText.text = "UNIT #04: PINCH [SCAN] TO TRACE FAULT"
+        this.calloutHeaderText.textFill.color = cyan
+      } else if (snapshot.phase === "SCANNING") {
+        this.calloutHeaderText.text = "SCANNING UNIT #04: LOCALIZING TR-309 SYMPTOM..."
         this.calloutHeaderText.textFill.color = cyan
       } else if (
         snapshot.phase === "DIAGNOSING" &&

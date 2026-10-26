@@ -81,6 +81,10 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
       interactor.getLabelText("CalloutValveBadge"),
       "After scan, CV-101 remains uninspected"
     ).toBe("CV-101: [UNINSPECTED]")
+    expect(
+      interactor.getLabelText("BtnPrimaryAction_Label"),
+      "At Trace 1/3, primary button guides upstream without spoiling Step 1 repair"
+    ).toBe("TRACE UPSTREAM: INSPECT [PR-204]")
 
     // 2b. Verify incorrect upstream skip (pinching CV-101 before PR-204) gives non-spoiling guidance
     await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
@@ -113,6 +117,11 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
       interactor.getLabelText("CalloutValveBadge"),
       "CV-101 now prompts upstream inspection without spoiling root cause yet"
     ).toBe("CV-101: [PINCH: INSPECT]")
+    expect(
+      interactor.getLabelText("BtnPrimaryAction_Label"),
+      "At Trace 2/3, primary button guides to CV-101 without spoiling Step 2 repair"
+    ).toBe("TRACE UPSTREAM: INSPECT [CV-101]")
+    await sleep(150)
 
     // 3b. Complete Upstream Causal Trace -> Pinch Hotspot_CoolantValve (Trace 3/3 + Reveal Root Cause)
     await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
@@ -125,6 +134,11 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
       interactor.getLabelText("CalloutValveBadge"),
       "Completed causal trace reveals CV-101 18% flow root cause and LOTO action"
     ).toBe("CV-101: 18% FLOW [PINCH: LOTO]")
+    expect(
+      interactor.getLabelText("BtnPrimaryAction_Label"),
+      "Only after Trace 3/3 completes does primary button reveal Step 1 LOTO action"
+    ).toBe("EXECUTE STEP 1: LOCK VALVE")
+    await sleep(150)
 
     // Verify manual BtnToggleXray off-toggle genuinely closes X-Ray and clears focusedXrayHotspot, then re-open
     await interactor.triggerNamedInteractable("BtnToggleXray")
@@ -142,6 +156,7 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
     expect(interlockSnap.safetyViolations, "Safety violation recorded").toBe(1)
     expect(interlockSnap.selectedHotspot, "Interlock redirects focus upstream to CV-101 valve").toBe("valve")
     expect(interlockSnap.currentStepIndex, "Interlock redirects step index to Step 1 (0)").toBe(0)
+    await sleep(100)
 
     // 5. Execute all 4 Steps via Direct 3D Machine Pinches & Verify Cause-and-Effect Visual Recovery
     // Step 1: Isolate CV-101 Valve
@@ -149,6 +164,7 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
     const step1Snap = interactor.getSnapshot()
     expect(step1Snap.completedCount, "Step 1 completed").toBe(1)
     expect(step1Snap.flowBottleneckStage, "Flow stage transitions to isolated_trapped_psi").toBe("isolated_trapped_psi")
+    await sleep(100)
 
     // Step 2: Purge PR-204 Regulator -> Verify 3D Vapor Purge Plume bursts upward
     await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
@@ -156,6 +172,7 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
     expect(step2Snap.completedCount, "Step 2 completed").toBe(2)
     expect(step2Snap.systemPressurePsi, "Pressure drops from 142 to 38 PSI").toBe(38)
     expect(purgePlume !== null && purgePlume.enabled, "RegulatorPurgePlume bursts upward on Step 2 purge").toBe(true)
+    await sleep(100)
 
     // Step 3: Reseat TR-309 Thermal Relay Core -> Verify Overheat Crown extinguishes
     await interactor.triggerNamedInteractable("Hotspot_ThermalRelayCore")
@@ -164,6 +181,7 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
     expect(step3Snap.systemTempC, "Temperature cools from 82C to 46C").toBe(46)
     expect(step3Snap.flowBottleneckStage, "Flow stage transitions to purged_cooled_ready").toBe("purged_cooled_ready")
     expect(overheatCrown !== null && !overheatCrown.enabled, "RelayOverheatCrown extinguishes once cooled").toBe(true)
+    await sleep(100)
 
     // Step 4: Remove LOTO & Re-open CV-101 Valve -> Verify 100% Nominal Flow Restoration
     await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
@@ -173,6 +191,7 @@ export class FieldFixTraceTheFaultSignatureScenario extends Scenario {
     expect(finalSnap.flowBottleneckStage, "Flow stage is nominal_100pct").toBe("nominal_100pct")
     expect(finalSnap.faultTraceComplete, "All 3 subsystems traced and verified").toBe(true)
     expect(finalSnap.trainingScorePct, "Trainee score with 1 LOTO violation is 85%").toBe(85)
+    await sleep(150)
 
     // 6. Reset & Verify Clean Restoration
     await interactor.triggerNamedInteractable("BtnResetUnit")
