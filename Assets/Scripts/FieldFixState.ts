@@ -112,9 +112,9 @@ export const HOTSPOT_CATALOG: Record<HotspotId, ComponentDiagnosticInfo> = {
     nominalTelemetry: "FLOW: 100% | INTAKE: 39C",
     rootCause: "Simulated intake cavitation & bypass restriction starving the relay cooling jacket.",
     causalTraceSummary:
-      "UPSTREAM ORIGIN [CV-101]: Partially fouled ball-seal restricts cryo-intake to 18%, triggering downstream vapor lock at PR-204.",
+      "ROOT CAUSE FOUND [CV-101]: Partially fouled ball-seal restricts intake to 18%, causing PR-204 vapor lock (142 PSI) & TR-309 overheat (118C).",
     causalLinkHint:
-      "ROOT CAUSE TRACED [3/3]: CV-101 intake cavitation (18% flow) caused PR-204 142 PSI spike & TR-309 118C overheat! Execute Step 1 LOTO.",
+      "ROOT CAUSE TRACED [3/3]: CV-101 intake cavitation (18% flow) is the root cause! Pinch 3D [CV-101] or [EXECUTE STEP 1] to lock LOTO.",
     xrayInternalSummary:
       "X-RAY CUTAWAY [CV-101]: Internal cryo-ball seal & intake venturi exposed — cavitation micro-vortices visible across seat ring.",
     lockedOutSummary: "Simulated LOTO clasp engaged; intake line isolated (0% flow) for safe downstream bleed.",
@@ -133,9 +133,9 @@ export const HOTSPOT_CATALOG: Record<HotspotId, ComponentDiagnosticInfo> = {
     nominalTelemetry: "LINE: 45 PSI | LIMIT: 65 PSI",
     rootCause: "Simulated vapor lock spike trapped upstream of thermal relay manifold.",
     causalTraceSummary:
-      "MIDSTREAM BOTTLENECK [PR-204]: 142 PSI vapor pocket blocks manifold passage, choking flow to TR-309 Relay Core.",
+      "BOTTLENECK FOUND [PR-204]: 142 PSI vapor pocket blocks manifold flow to TR-309. Inspect upstream component [CV-101] to find the source.",
     causalLinkHint:
-      "CAUSAL TRACE [2/3]: PR-204 vapor-lock (142 PSI) blocks flow to TR-309 -> Pinch CV-101 Intake Valve upstream to find root cause.",
+      "TRACE [2/3]: Bottleneck found at PR-204 (142 PSI vapor lock) -> Follow 3D chevron upstream and pinch [CV-101] to inspect intake.",
     xrayInternalSummary:
       "X-RAY CUTAWAY [PR-204]: Internal relief spring & diaphragm spool exposed — 142 PSI vapor pocket compressing upper bellows.",
     repairedSummary: "Simulated bypass relief purge complete; manifold pressure regulated at 38-45 PSI.",
@@ -151,11 +151,11 @@ export const HOTSPOT_CATALOG: Record<HotspotId, ComponentDiagnosticInfo> = {
     initialSeverity: "critical",
     faultTelemetry: "CORE: 118C | TRIP: 105C",
     nominalTelemetry: "CORE: 42C | TRIP: 105C",
-    rootCause: "Simulated thermal latch tripped due to coolant starvation; requires core reseat.",
+    rootCause: "Simulated thermal latch tripped due to coolant starvation. Inspect the next component upstream [PR-204] to see why.",
     causalTraceSummary:
-      "DOWNSTREAM SYMPTOM [TR-309]: Starved of coolant by PR-204 (142 PSI) & CV-101 (18%) -> Core overheated to 118C and tripped plunger.",
+      "SYMPTOM [TR-309]: Thermal relay core overheated to 118C from coolant starvation. Inspect the next component upstream to find why.",
     causalLinkHint:
-      "CAUSAL TRACE [1/3]: TR-309 overheated (118C) from coolant starvation -> Pinch PR-204 Regulator upstream to trace pressure spike.",
+      "TRACE [1/3]: Symptom confirmed at TR-309 (118C overheat) -> Follow 3D chevron and pinch upstream component [PR-204] to inspect.",
     xrayInternalSummary:
       "X-RAY CUTAWAY [TR-309]: Internal copper stator windings & bimetallic trip plunger lifted +1.35 cm above cooling sleeve.",
     repairedSummary: "Simulated thermal relay plunger reseated and latch locked; core cooled to nominal range.",
@@ -229,9 +229,9 @@ export class FieldFixStateMachine {
     relay: false
   }
   private _whatChangedSummary: string =
-    "CAUSE TRACE: [CV-101] 18% Cavitation + [PR-204] 142 PSI Vapor Lock -> Starves [TR-309] (118C Overheat)."
+    "VISIBLE SYMPTOM: [TR-309] Thermal Relay Core is overheating (116C). Upstream components [PR-204] & [CV-101] are uninspected."
   private _activeFeedbackText: string =
-    "FIRST-RUN GUIDE: 1) Observe choked flow & 118C alarm on Unit #04 -> 2) Pinch [SCAN] or any 3D part to trace fault."
+    "FIRST-RUN GUIDE: Only the TR-309 overheat symptom (116C) is visible. Pinch [SCAN] to begin tracing upstream."
   private _activeFeedbackSeverity: FaultSeverity = "warning"
   private _interlockFlashHotspot: HotspotId | null = null
 
@@ -302,9 +302,9 @@ export class FieldFixStateMachine {
     }
     this._interlockFlashHotspot = null
     this._whatChangedSummary =
-      "CAUSE TRACE: [CV-101] 18% Cavitation + [PR-204] 142 PSI Vapor Lock -> Starves [TR-309] (118C Overheat)."
+      "VISIBLE SYMPTOM: [TR-309] Thermal Relay Core is overheating (116C). Upstream components [PR-204] & [CV-101] are uninspected."
     this._activeFeedbackText =
-      "FIRST-RUN GUIDE: 1) Observe choked flow & 118C alarm on Unit #04 -> 2) Pinch [SCAN] or any 3D part to trace fault."
+      "FIRST-RUN GUIDE: Only the TR-309 overheat symptom (116C) is visible. Pinch [SCAN] to begin tracing upstream."
     this._activeFeedbackSeverity = "warning"
     return this.getSnapshot()
   }
@@ -314,9 +314,9 @@ export class FieldFixStateMachine {
     this._comparisonFaultPreview = false
     this._interlockFlashHotspot = null
     this._whatChangedSummary =
-      "SWEEPING FLOW PATH: Tracing cryo-manifold from CV-101 (18%) -> PR-204 (142 PSI blockage) -> TR-309 (118C)..."
+      "SWEEPING UNIT #04: Confirming TR-309 thermal symptom (118C) and mapping upstream manifold components..."
     this._activeFeedbackText =
-      "ACTIVE TELEMETRY SWEEP: Localizing thermal, pressure, and cavitation faults across Unit #04..."
+      "ACTIVE TELEMETRY SWEEP: Localizing TR-309 overheat symptom and preparing upstream inspection path..."
     this._activeFeedbackSeverity = "warning"
     return this.getSnapshot()
   }
@@ -334,7 +334,7 @@ export class FieldFixStateMachine {
       relay: true
     }
     this._whatChangedSummary =
-      "FAULT PATH LOCALIZED: PR-204 (142 PSI) blocks flow to TR-309 (118C). Pinch 3D parts upstream to trace or start Step 1 at CV-101."
+      "SYMPTOM CONFIRMED [1/3]: TR-309 is overheating (118C). Pinch upstream component [PR-204] to inspect for blockage."
     this._activeFeedbackText = HOTSPOT_CATALOG.relay.causalLinkHint
     this._activeFeedbackSeverity = "critical"
     return this.getSnapshot()
@@ -344,7 +344,9 @@ export class FieldFixStateMachine {
     this._xrayMode = !this._xrayMode
     const comp = HOTSPOT_CATALOG[this._selectedHotspot]
     if (this._xrayMode) {
-      this._activeFeedbackText = comp.xrayInternalSummary
+      this._activeFeedbackText = this._tracedHotspots[this._selectedHotspot]
+        ? comp.xrayInternalSummary
+        : "X-RAY ACTIVE: Follow the 3D chevron upstream ([TR-309] -> [PR-204] -> [CV-101]) to inspect each component."
       this._activeFeedbackSeverity = "warning"
     } else {
       this._activeFeedbackText = `X-RAY CLOSED: Standard exterior view restored for [${comp.subsystemCode}].`
@@ -381,15 +383,42 @@ export class FieldFixStateMachine {
   public selectHotspot(hotspotId: HotspotId): FieldFixUISnapshot {
     const wasInStandby = this._phase === "READY_TO_SCAN" || this._phase === "SCANNING"
     this._selectedHotspot = hotspotId
-    this._tracedHotspots[hotspotId] = true
     this._comparisonFaultPreview = false
     this._interlockFlashHotspot = null
 
     if (wasInStandby) {
       this._phase = "DIAGNOSING"
-    } else if (this._phase === "DIAGNOSING") {
-      // Auto-reveal 3D X-Ray internal cutaways when tracing a hotspot in DIAGNOSING phase
-      this._xrayMode = true
+      this._tracedHotspots.relay = true
+    }
+
+    // Progressive discovery rule:
+    // 1. TR-309 (relay) is the initial visible symptom (1/3).
+    // 2. PR-204 (regulator) bottleneck is revealed only after inspecting regulator once relay is traced (2/3).
+    // 3. CV-101 (valve) root cause is revealed only after inspecting valve once both relay & regulator are traced (3/3).
+    let skippedUpstreamOrder = false
+    if (hotspotId === "relay") {
+      this._tracedHotspots.relay = true
+    } else if (hotspotId === "regulator") {
+      if (this._tracedHotspots.relay) {
+        this._tracedHotspots.regulator = true
+      } else {
+        skippedUpstreamOrder = true
+      }
+    } else if (hotspotId === "valve") {
+      if (this._tracedHotspots.relay && this._tracedHotspots.regulator) {
+        this._tracedHotspots.valve = true
+      } else {
+        skippedUpstreamOrder = true
+      }
+    }
+
+    if (!wasInStandby && this._phase === "DIAGNOSING") {
+      if (skippedUpstreamOrder) {
+        this._xrayMode = false
+      } else {
+        // Auto-reveal 3D X-Ray internal cutaways when tracing a valid upstream hotspot in DIAGNOSING phase
+        this._xrayMode = true
+      }
     }
 
     // Jump to the first incomplete repair step associated with this hotspot if in DIAGNOSING/REPAIRING
@@ -406,22 +435,36 @@ export class FieldFixStateMachine {
     const comp = HOTSPOT_CATALOG[hotspotId]
     const traceCount = this.computeFaultTraceCount()
     const traceComplete = traceCount >= 3
-    this._whatChangedSummary = comp.causalTraceSummary
 
     if (this._phase === "COMPLETED") {
+      this._whatChangedSummary = comp.causalTraceSummary
       this._activeFeedbackText = `INSPECTING [${comp.subsystemCode}]: Subsystem verified nominal.`
       this._activeFeedbackSeverity = "nominal"
+    } else if (skippedUpstreamOrder) {
+      this._advisoryCount++
+      this._whatChangedSummary =
+        "TRACE ORDER INCOMPLETE: Inspect midstream component [PR-204] upstream from [TR-309] before diagnosing [CV-101]."
+      this._activeFeedbackText =
+        "TRACE GUIDANCE: Do not skip ahead! Follow the 3D chevron and pinch midstream component [PR-204] first."
+      this._activeFeedbackSeverity = "warning"
     } else if (firstIncomplete >= 0 && this._currentStepIndex > firstIncomplete) {
       this._advisoryCount++
-      const reqStep = REPAIR_STEPS[firstIncomplete]
-      const reqComp = HOTSPOT_CATALOG[reqStep.targetHotspot]
-      this._activeFeedbackText =
-        `${comp.causalLinkHint} (LOTO RULE: Execute Step ${reqStep.stepNumber}/4 [${reqComp.subsystemCode}] first.)`
+      this._whatChangedSummary = comp.causalTraceSummary
+      if (traceComplete) {
+        const reqStep = REPAIR_STEPS[firstIncomplete]
+        const reqComp = HOTSPOT_CATALOG[reqStep.targetHotspot]
+        this._activeFeedbackText =
+          `${comp.causalLinkHint} (LOTO RULE: Execute Step ${reqStep.stepNumber}/4 [${reqComp.subsystemCode}] first.)`
+      } else {
+        this._activeFeedbackText = comp.causalLinkHint
+      }
       this._activeFeedbackSeverity = "warning"
     } else if (traceComplete && firstIncomplete === 0 && this._currentStepIndex === 0) {
+      this._whatChangedSummary = comp.causalTraceSummary
       this._activeFeedbackText = HOTSPOT_CATALOG.valve.causalLinkHint
       this._activeFeedbackSeverity = "nominal"
     } else {
+      this._whatChangedSummary = comp.causalTraceSummary
       this._activeFeedbackText = `${comp.causalLinkHint}`
       this._activeFeedbackSeverity = "warning"
     }
@@ -439,7 +482,17 @@ export class FieldFixStateMachine {
     if (this._currentStepIndex < REPAIR_STEPS.length - 1) {
       this._currentStepIndex++
       this._selectedHotspot = REPAIR_STEPS[this._currentStepIndex].targetHotspot
-      this._tracedHotspots[this._selectedHotspot] = true
+      if (this._selectedHotspot === "relay") {
+        this._tracedHotspots.relay = true
+      } else if (this._selectedHotspot === "regulator" && this._tracedHotspots.relay) {
+        this._tracedHotspots.regulator = true
+      } else if (
+        this._selectedHotspot === "valve" &&
+        this._tracedHotspots.relay &&
+        this._tracedHotspots.regulator
+      ) {
+        this._tracedHotspots.valve = true
+      }
     }
 
     const firstIncomplete = this.getFirstIncompleteStepIndex()
@@ -466,7 +519,17 @@ export class FieldFixStateMachine {
     if (this._currentStepIndex > 0) {
       this._currentStepIndex--
       this._selectedHotspot = REPAIR_STEPS[this._currentStepIndex].targetHotspot
-      this._tracedHotspots[this._selectedHotspot] = true
+      if (this._selectedHotspot === "relay") {
+        this._tracedHotspots.relay = true
+      } else if (this._selectedHotspot === "regulator" && this._tracedHotspots.relay) {
+        this._tracedHotspots.regulator = true
+      } else if (
+        this._selectedHotspot === "valve" &&
+        this._tracedHotspots.relay &&
+        this._tracedHotspots.regulator
+      ) {
+        this._tracedHotspots.valve = true
+      }
     }
     if (this._phase !== "COMPLETED") {
       this._activeFeedbackText = `ACTIVE STEP: ${REPAIR_STEPS[this._currentStepIndex].title}`
@@ -517,10 +580,9 @@ export class FieldFixStateMachine {
         `SAFETY INTERLOCK [LOTO VIOLATION]: ${blockedStep.interlockReason} Redirected to Step ${reqStep.stepNumber}/4 [${reqComp.subsystemCode}].`
       this._activeFeedbackSeverity = "critical"
 
-      // Auto-redirect trainee to the required prerequisite step
+      // Auto-redirect trainee to the required prerequisite step (do not mark uninspected root cause as traced)
       this._currentStepIndex = firstIncomplete
       this._selectedHotspot = reqStep.targetHotspot
-      this._tracedHotspots[this._selectedHotspot] = true
       this._phase = "REPAIRING"
 
       return {
@@ -684,9 +746,13 @@ export class FieldFixStateMachine {
         "LOTO ISOLATED: [CV-101] Locked (0% Flow) -> 128 PSI Trapped in [PR-204] -> Purge Next"
     }
 
-    // Determine localized Auto-X-Ray focus (opens internal cutaway on selected faulted component when X-Ray is active)
+    // Determine localized Auto-X-Ray focus (opens internal cutaway on selected faulted component only if it has been traced)
     let focusedXrayHotspot: HotspotId | null = null
-    if (this._xrayMode && (this._phase === "DIAGNOSING" || this._phase === "REPAIRING")) {
+    if (
+      this._xrayMode &&
+      (this._phase === "DIAGNOSING" || this._phase === "REPAIRING") &&
+      this._tracedHotspots[this._selectedHotspot]
+    ) {
       if (!this.isHotspotRepaired(this._selectedHotspot)) {
         focusedXrayHotspot = this._selectedHotspot
       }
@@ -706,9 +772,9 @@ export class FieldFixStateMachine {
     const faultTraceComplete = faultTraceCount >= 3
     const nextTraceTarget = this.computeNextTraceTarget()
 
-    let headerBadgeText = "ALERT: CRYO-PUMP #04 — TRACE FAULT"
+    let headerBadgeText = "ALERT: CRYO-PUMP #04 — OVERHEAT ALARM"
     let headerSeverity: FaultSeverity = "warning"
-    let statusSummaryText = "Pinch [SCAN EQUIPMENT] or any 3D component to trace the coolant fault."
+    let statusSummaryText = "Only the TR-309 overheat symptom (116C) is visible. Pinch [SCAN] to trace upstream."
 
     if (this._comparisonFaultPreview) {
       headerBadgeText = "COMPARE MODE: INITIAL FAULT SNAPSHOT"
@@ -717,13 +783,15 @@ export class FieldFixStateMachine {
     } else if (this._phase === "SCANNING") {
       headerBadgeText = "SCANNING & TRACING FLOW PATH..."
       headerSeverity = "warning"
-      statusSummaryText = "Sweeping CV-101 Valve, PR-204 Regulator, and TR-309 Relay Core..."
+      statusSummaryText = "Confirming TR-309 overheat symptom and mapping upstream manifold..."
     } else if (this._phase === "DIAGNOSING") {
       headerBadgeText = faultTraceComplete
         ? "ROOT CAUSE TRACED: START STEP 1 LOTO"
         : `TRACE FAULT PATH (${faultTraceCount}/3 INSPECTED)`
       headerSeverity = "critical"
-      statusSummaryText = "Fault Path Localized. Pinch 3D parts upstream to trace or start Step 1 at CV-101."
+      statusSummaryText = faultTraceComplete
+        ? "Root cause traced to CV-101 (18% flow). Execute Step 1 LOTO isolation."
+        : "Follow the 3D chevron upstream to inspect the next component in the coolant loop."
     } else if (this._phase === "REPAIRING") {
       if (this._interlockFlashHotspot) {
         headerBadgeText = "SAFETY INTERLOCK: LOTO SEQUENCE BLOCKED"

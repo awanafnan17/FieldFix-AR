@@ -912,8 +912,13 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.scanRingObj.enabled = false
     }
 
-    // Update 3D Vapor-Lock Bottleneck Collar & Vertical Riser Surge visibility
-    const isRegulatorBlocked = !this.completedSteps[1]
+    // Update 3D Vapor-Lock Bottleneck Collar & Vertical Riser Surge visibility:
+    // Progressive discovery: reveal PR-204's red bottleneck collar & pressure surge only once PR-204 is inspected!
+    const regulatorBottleneckRevealed =
+      snapshot.tracedHotspots.regulator ||
+      snapshot.completedCount > 0 ||
+      snapshot.comparisonFaultPreview
+    const isRegulatorBlocked = regulatorBottleneckRevealed && !this.completedSteps[1]
     if (this.faultBottleneckVisual) {
       const targetMesh = isRegulatorBlocked ? this.bottleneckMeshBlocked : this.bottleneckMeshCleared
       if (targetMesh) {
@@ -943,8 +948,12 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.lotoSafetyClaspObj.enabled = this.completedSteps[0] && !this.completedSteps[3]
     }
 
-    // Step 2 (Regulator Purge): +48 deg points left (red 142 PSI danger marker) and -38 deg points right (green 38 PSI marker)
-    this.targetGaugeAngleDeg = this.completedSteps[1] ? -38 : 48
+    // Step 2 (Regulator Purge): +48 deg points left (red 142 PSI danger marker) once PR-204 is inspected, 0 deg when uninspected, and -38 deg points right (green 38 PSI marker) once purged
+    this.targetGaugeAngleDeg = this.completedSteps[1]
+      ? -38
+      : regulatorBottleneckRevealed
+        ? 48
+        : 0
 
     // Step 3 (Relay Core Reseat): retracts relay core from +1.35 cm down to 0.0 cm & rotates latch 45 deg
     this.targetRelayLiftCm = this.completedSteps[2] ? 0.0 : 1.35

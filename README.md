@@ -10,11 +10,11 @@
 
 When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Relay Unit (`Unit #04`)**, FieldFix AR anchors a multi-part, articulated 3D equipment assembly on the left and a companion `SpectaclesUIKit` diagnostic and repair checklist on the right at workbench depth (`z = -110 cm`). Using far-field hand-pinch gestures (`SpectaclesInteractionKit`), the user can:
 
-1. **Run a Simulated Equipment Telemetry Scan & "TRACE THE FAULT" Upstream Discovery (`SCAN EQUIPMENT TELEMETRY`):**
-   Sweeps a volumetric dual-beam 3D laser ring (`LaserScanSweepRing`) across the 3D machine to start a **reverse-causal 3D fault trace** across three subsystems linked to the physical housing by **3D Callout Leader Struts** and **2-Zone Coolant Flow Pulse Rings**:
-   - **Symptom (`TR-309` Thermal Relay Core Assembly — Trace 1/3):** `CRITICAL: CORE OVERHEAT (118°C)` — starved by choked downstream coolant trickle (`RelayOverheatCrown`).
-   - **Bottleneck (`PR-204` High-Pressure Bypass Regulator — Trace 2/3):** `FAULT: OVER-PRESSURE (142 PSI)` — pinching `PR-204` upstream automatically activates localized 3D X-Ray Cutaway (`RegulatorInternalDiaphragm`) to reveal the vapor-locked relief spring (`FaultBottleneckRing`).
-   - **Root Cause (`CV-101` Primary Coolant Isolation Valve — Trace 3/3):** `WARN: FLOW RESTRICTED (18%)` — pinching `CV-101` upstream exposes the fouled internal cryo-ball seal (`ValveInternalCryoSeal`) and unlocks Step 1/4 (`LOTO Isolation`).
+1. **Run a Simulated Equipment Telemetry Scan & "TRACE THE FAULT" Progressive Discovery (`SCAN EQUIPMENT TELEMETRY`):**
+   Initially, only the visible overheat symptom at `TR-309` (`116°C`) is shown while upstream components read `[UNINSPECTED]`. Pinching `SCAN EQUIPMENT TELEMETRY` sweeps a volumetric dual-beam 3D laser ring (`LaserScanSweepRing`) across the 3D machine and guides the trainee through a **progressive reverse-causal 3D fault trace** without spoiling the upstream answers beforehand:
+   - **Symptom (`TR-309` Thermal Relay Core Assembly — Trace 1/3):** `CRITICAL: CORE OVERHEAT (118°C)` — localizes the overheat symptom and prompts the trainee to inspect the next upstream component (`PR-204`) without revealing the bottleneck yet.
+   - **Bottleneck (`PR-204` High-Pressure Bypass Regulator — Trace 2/3):** `FAULT: OVER-PRESSURE (142 PSI)` — revealed only after pinching `PR-204` upstream, which activates localized 3D X-Ray Cutaway (`RegulatorInternalDiaphragm`), illuminates the red vapor-lock collar (`FaultBottleneckRing`), and guides the trainee upstream to `CV-101`.
+   - **Root Cause (`CV-101` Primary Coolant Isolation Valve — Trace 3/3):** `WARN: FLOW RESTRICTED (18%)` — revealed only after completing the upstream trace to `CV-101`, exposing the fouled internal cryo-ball seal (`ValveInternalCryoSeal`) and unlocking Step 1/4 (`LOTO Isolation`).
 
 2. **Toggle 3D Spatial X-Ray / Localized Exploded Cutaway Mode (`X-RAY CUTAWAY`):**
    Pinching an upstream component during the fault trace (or pinching `X-RAY CUTAWAY`) explodes internal 3D procedural sub-assemblies (`1.0x` full lift on the focused component, `0.36x` tucked preview on non-selected components) and rotates them in real time so trainees can see *inside* the machine before touching a wrench:
