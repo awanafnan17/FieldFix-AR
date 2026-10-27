@@ -22,13 +22,46 @@ export class FieldFixMidRepairShowcaseScenario extends Scenario {
     // 1. Trigger Equipment Scan (Trace 1/3 at TR-309) and Trace Upstream via BtnPrimaryAction (2/3 PR-204 -> 3/3 CV-101)
     await interactor.triggerNamedInteractable("BtnPrimaryAction")
     await sleep(1450)
-    expect(interactor.getSnapshot().phase, "Scan enters DIAGNOSING").toBe("DIAGNOSING")
+    const trace1Snap = interactor.getSnapshot()
+    expect(trace1Snap.phase, "Scan enters DIAGNOSING").toBe("DIAGNOSING")
+    expect(trace1Snap.faultTraceCount, "Scan localizes TR-309 at Trace 1/3").toBe(1)
+    expect(
+      interactor.getLabelText("BtnPrimaryAction_Label"),
+      "At Trace 1/3, BtnPrimaryAction shows TRACE UPSTREAM: INSPECT [PR-204]"
+    ).toBe("TRACE UPSTREAM: INSPECT [PR-204]")
 
+    // Regression Gate A: Click yellow "TRACE UPSTREAM: INSPECT [PR-204]" button at Trace 1/3
     await interactor.triggerNamedInteractable("BtnPrimaryAction")
-    expect(interactor.getSnapshot().faultTraceCount, "BtnPrimaryAction traces upstream to PR-204 (2/3)").toBe(2)
+    const trace2Snap = interactor.getSnapshot()
+    expect(trace2Snap.selectedHotspot, "Clicking BtnPrimaryAction at Trace 1/3 inspects PR-204").toBe("regulator")
+    expect(trace2Snap.faultTraceCount, "BtnPrimaryAction advances upstream trace to 2/3").toBe(2)
+    expect(trace2Snap.completedCount, "BtnPrimaryAction at Trace 1/3 does not execute a repair").toBe(0)
+    expect(trace2Snap.safetyViolations, "BtnPrimaryAction at Trace 1/3 logs 0 violations").toBe(0)
+    expect(
+      interactor.getLabelText("CalloutRegulatorBadge"),
+      "Clicking BtnPrimaryAction at Trace 1/3 reveals PR-204 142 PSI bottleneck"
+    ).toBe("PR-204: 142 PSI [142 PSI BLOCK]")
+    expect(
+      interactor.getLabelText("BtnPrimaryAction_Label"),
+      "At Trace 2/3, BtnPrimaryAction shows TRACE UPSTREAM: INSPECT [CV-101]"
+    ).toBe("TRACE UPSTREAM: INSPECT [CV-101]")
 
+    // Regression Gate B: Click yellow "TRACE UPSTREAM: INSPECT [CV-101]" button at Trace 2/3
     await interactor.triggerNamedInteractable("BtnPrimaryAction")
-    expect(interactor.getSnapshot().faultTraceComplete, "BtnPrimaryAction completes upstream trace at CV-101 (3/3)").toBe(true)
+    const trace3Snap = interactor.getSnapshot()
+    expect(trace3Snap.selectedHotspot, "Clicking BtnPrimaryAction at Trace 2/3 inspects CV-101").toBe("valve")
+    expect(trace3Snap.faultTraceCount, "BtnPrimaryAction advances upstream trace to 3/3").toBe(3)
+    expect(trace3Snap.faultTraceComplete, "BtnPrimaryAction completes upstream trace at CV-101 (3/3)").toBe(true)
+    expect(trace3Snap.completedCount, "BtnPrimaryAction at Trace 2/3 does not execute a repair").toBe(0)
+    expect(trace3Snap.safetyViolations, "BtnPrimaryAction at Trace 2/3 logs 0 false safety violations").toBe(0)
+    expect(
+      interactor.getLabelText("CalloutValveBadge"),
+      "Clicking BtnPrimaryAction at Trace 2/3 reveals CV-101 18% root cause"
+    ).toBe("CV-101: 18% FLOW [PINCH: LOTO]")
+    expect(
+      interactor.getLabelText("BtnPrimaryAction_Label"),
+      "At Trace 3/3, BtnPrimaryAction unlocks EXECUTE STEP 1: LOCK VALVE"
+    ).toBe("EXECUTE STEP 1: LOCK VALVE")
 
     // 2. Execute Step 1 (Lockout Valve CV-101)
     await interactor.triggerNamedInteractable("BtnPrimaryAction")
