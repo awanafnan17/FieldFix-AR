@@ -40,12 +40,12 @@ export class FieldFixFullDiagnosticRepairScenario extends Scenario {
     expect(scannedSnap.systemTempC, "Fault temperature should be 118C").toBe(118)
     expect(scannedSnap.systemPressurePsi, "Fault pressure should be 142 PSI").toBe(142)
 
-    // 3. Test Direct 3D Hotspot Selection on the 3D Equipment Assembly
-    await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
-    expect(interactor.getSnapshot().selectedHotspot, "3D Valve hotspot should select valve").toBe("valve")
-
+    // 3. Test Direct 3D Hotspot Selection on the 3D Equipment Assembly (Upstream Trace Order)
     await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
     expect(interactor.getSnapshot().selectedHotspot, "3D Regulator hotspot should select regulator").toBe("regulator")
+
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
+    expect(interactor.getSnapshot().selectedHotspot, "3D Valve hotspot should select valve").toBe("valve")
 
     await interactor.triggerNamedInteractable("Hotspot_ThermalRelayCore")
     expect(interactor.getSnapshot().selectedHotspot, "3D Relay hotspot should select relay").toBe("relay")

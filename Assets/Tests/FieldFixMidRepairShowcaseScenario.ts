@@ -19,10 +19,16 @@ export class FieldFixMidRepairShowcaseScenario extends Scenario {
     main.resetExperience()
     await sleep(100)
 
-    // 1. Trigger Equipment Scan
+    // 1. Trigger Equipment Scan (Trace 1/3 at TR-309) and Trace Upstream via BtnPrimaryAction (2/3 PR-204 -> 3/3 CV-101)
     await interactor.triggerNamedInteractable("BtnPrimaryAction")
     await sleep(1450)
     expect(interactor.getSnapshot().phase, "Scan enters DIAGNOSING").toBe("DIAGNOSING")
+
+    await interactor.triggerNamedInteractable("BtnPrimaryAction")
+    expect(interactor.getSnapshot().faultTraceCount, "BtnPrimaryAction traces upstream to PR-204 (2/3)").toBe(2)
+
+    await interactor.triggerNamedInteractable("BtnPrimaryAction")
+    expect(interactor.getSnapshot().faultTraceComplete, "BtnPrimaryAction completes upstream trace at CV-101 (3/3)").toBe(true)
 
     // 2. Execute Step 1 (Lockout Valve CV-101)
     await interactor.triggerNamedInteractable("BtnPrimaryAction")

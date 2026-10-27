@@ -115,11 +115,11 @@ FieldFix-AR/
    - Device is set to **`SPECS 27`**
    - Input mode is set to **Interactive**
 4. Interact in the Preview Panel:
-   - Pinch/click **`SCAN EQUIPMENT TELEMETRY`** (or any 3D hotspot) to run the dual-beam laser scan sweep and localize the 3 simulated equipment faults.
-   - Pinch/click **`X-RAY CUTAWAY`** (bottom-left utility button) to explode the 3 internal 3D sub-assemblies (`ValveInternalCryoSeal`, `RegulatorInternalDiaphragm`, `RelayInternalStatorCoil`) outward (`y = +2.75..3.15 cm, z = +1.45 cm`) and inspect their internal mechanics.
-   - Try advancing to Step 2 or Step 3 before completing Step 1 and pinching **`EXECUTE STEP`** to observe the **Sequential LOTO Safety Interlock** block the unsafe action, flash the 3D red hazard halo, and auto-redirect to `CV-101`.
+   - Pinch/click **`SCAN EQUIPMENT TELEMETRY`** to run the dual-beam laser scan sweep and localize the visible overheat symptom at **`TR-309`** (`Trace 1/3: 118°C`), while upstream `PR-204` and `CV-101` remain concealed (`[PINCH: INSPECT]` / `[UNINSPECTED]`).
+   - Follow the 3D chevron upstream: pinch **`Hotspot_PressureRegulator`** (`PR-204`) or **`TRACE UPSTREAM: INSPECT [PR-204]`** (`Trace 2/3`) to automatically lift `RegulatorInternalDiaphragm` in localized **3D Auto-X-Ray** (`1.0x` height) and reveal the `142 PSI` vapor-lock bottleneck; then pinch **`Hotspot_CoolantValve`** (`CV-101`) or **`TRACE UPSTREAM: INSPECT [CV-101]`** (`Trace 3/3`) to expose `ValveInternalCryoSeal`, reveal the `18%` intake cavitation root cause, and unlock Step 1/4 (`LOTO Isolation`). (Trying to skip `PR-204` and pinch `CV-101` at Trace 1/3 is blocked with `[INSPECT PR-204 FIRST]`.)
+   - Before completing Step 1 (`CV-101`), test the **Sequential LOTO Safety Interlock** by pinching `Hotspot_PressureRegulator` (`PR-204`) twice (or selecting `PR-204` / `TR-309` and pinching `EXECUTE STEP`) to observe the 3D red hazard flash, audible alert (`FaultAlert.wav`), LOTO Violation #1 (`-15%`), and automatic redirect to `CV-101`.
    - Pinch/click directly on the **active 3D component hotspot** indicated by the bobbing 3D chevron (`Hotspot_CoolantValve`, `Hotspot_PressureRegulator`, `Hotspot_ThermalRelayCore`) **or** pinch **`EXECUTE STEP 1..4`** on the HUD panel to perform each repair step in order (`1 -> 2 -> 3 -> 4`).
-   - Once all 4 steps are completed, pinch **`COMPARE BEFORE/AFTER`** (bottom-right utility button) to toggle the 3D machine and telemetry between `FAULT (BEFORE)` and `NOMINAL (AFTER)`, or use **`< PREV STEP`**, **`NEXT STEP >`**, and **`RESET UNIT`**.
+   - Once all 4 steps are completed, pinch **`COMPARE BEFORE/AFTER`** (bottom-right utility button) to toggle the 3D machine and telemetry between `FAULT (BEFORE)` and `NOMINAL (AFTER)`, toggle **`X-RAY CUTAWAY`** (bottom-left utility button), or use **`< PREV STEP`**, **`NEXT STEP >`**, and **`RESET UNIT`**.
 
 ### Running Automated LEAF Tests
 1. In Lens Studio, open the **LEAF Panel** (or invoke `run_leaf_scenario` via Lens Studio MCP).

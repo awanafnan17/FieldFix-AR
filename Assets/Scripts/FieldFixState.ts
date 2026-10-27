@@ -635,8 +635,14 @@ export class FieldFixStateMachine {
       this._phase = "COMPLETED"
       this._tracedHotspots = { valve: true, regulator: true, relay: true }
       const score = Math.max(60, 100 - this._safetyViolations * 15)
+      const gradeLabel =
+        this._safetyViolations === 0
+          ? "A+ FLAWLESS LOTO"
+          : this._safetyViolations === 1
+          ? "B+ SAFETY REDIRECTED"
+          : "B VERIFIED"
       this._activeFeedbackText =
-        `TRAINING SCORECARD: ${score}% (${this._safetyViolations === 0 ? "A+ FLAWLESS LOTO" : "B VERIFIED"}) | Violations: ${this._safetyViolations} | Pinch [COMPARE] to review.`
+        `TRAINING SCORECARD: ${score}% (${gradeLabel}) | Violations: ${this._safetyViolations} | Pinch [COMPARE] to review.`
       this._activeFeedbackSeverity = "nominal"
     } else {
       // Advance to the next incomplete step automatically for smooth hands-free workflow

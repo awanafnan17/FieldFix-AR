@@ -323,6 +323,14 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         }
         if (this.pendingSnapshot.phase === "READY_TO_SCAN") {
           this.onScanRequestedEvent.invoke()
+        } else if (
+          this.pendingSnapshot.phase === "DIAGNOSING" &&
+          !this.pendingSnapshot.faultTraceComplete &&
+          this.pendingSnapshot.completedCount === 0 &&
+          !this.pendingSnapshot.comparisonFaultPreview &&
+          this.pendingSnapshot.nextTraceTarget !== null
+        ) {
+          this.onSelectHotspotEvent.invoke(this.pendingSnapshot.nextTraceTarget)
         } else {
           this.onConfirmStepEvent.invoke()
         }
