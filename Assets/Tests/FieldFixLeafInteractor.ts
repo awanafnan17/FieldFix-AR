@@ -34,10 +34,20 @@ export class FieldFixLeafInteractor extends DefaultLeafInteractor {
     return fallbackMain
   }
 
-  public async triggerNamedInteractable(sceneObjectName: string): Promise<void> {
+  public async triggerNamedInteractable(
+    sceneObjectName: string,
+    rapidNoCooldown: boolean = false
+  ): Promise<void> {
     const interactable = findInteractableByName(sceneObjectName)
     if (!interactable) {
       throw new Error(`Interactable "${sceneObjectName}" not found in scene.`)
+    }
+    if (
+      sceneObjectName === "BtnPrimaryAction" &&
+      !rapidNoCooldown &&
+      this.getSnapshot().phase === "REPAIRING"
+    ) {
+      await sleep(110)
     }
     await this.trigger(interactable)
     await nextFrame()

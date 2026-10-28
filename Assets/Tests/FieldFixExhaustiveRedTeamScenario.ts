@@ -1,8 +1,8 @@
 /**
  * FieldFixExhaustiveRedTeamScenario.ts
  * Hostile Red-Team LEAF Regression & State-Machine Invariant Fuzz Scenario:
- * - Phase 1: Reproduces and regression-tests Suspected Defects A through J + Phase 3/4 findings in live Lens Studio runtime.
- * - Phase 2: Executes 120 deterministic seeded adversarial event sequences checking all 10 State Machine Invariants.
+ * - Phase 1: Reproduces and regression-tests Suspected Defects A through J, Phase 3/4 findings, and Stress Defects SO-01..SO-05 in live Lens Studio runtime.
+ * - Phase 2: Executes 120 deterministic seeded adversarial event sequences checking all 12 State Machine Invariants.
  */
 
 import { Scenario } from "Leaf.lspkg/Scenarios/scenario/Scenario"
@@ -166,44 +166,101 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
     const beforeF2 = interactor.getSnapshot()
     await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
     const afterF = interactor.getSnapshot()
+    // Also verify selecting TR-309 during Trace 2/3 keeps currentStepIndex === 0 and keeps TR-309 halo crimson red
+    main.selectHotspot("relay")
+    const afterFRelay = interactor.getSnapshot()
+    const relayHaloObj = findSceneObjectByName("RelayDiagnosticHalo")
+    const relayHaloVis = relayHaloObj ? (relayHaloObj.getComponent("Component.RenderMeshVisual") as RenderMeshVisual | null) : null
+    const redHaloRef = (main.equipmentMesh as any)?.haloMeshRed
+    const relayHaloStaysRed = Boolean(relayHaloVis && redHaloRef && relayHaloVis.mesh === redHaloRef)
     print(
-      `[RedTeamAudit] TestF | BEFORE 2nd pinch: phase=${beforeF2.phase}, trace=${beforeF2.faultTraceCount}/3, violations=${beforeF2.safetyViolations} | AFTER 2nd pinch: phase=${afterF.phase}, trace=${afterF.faultTraceCount}/3, violations=${afterF.safetyViolations}`
+      `[RedTeamAudit] TestF | BEFORE 2nd pinch: phase=${beforeF2.phase}, stepIdx=${beforeF2.currentStepIndex}, trace=${beforeF2.faultTraceCount}/3, violations=${beforeF2.safetyViolations} | AFTER 2nd pinch: phase=${afterF.phase}, stepIdx=${afterF.currentStepIndex}, trace=${afterF.faultTraceCount}/3, violations=${afterF.safetyViolations}, relayHaloRed=${relayHaloStaysRed}`
     )
     recordCheck(
       "Defect-F",
-      afterF.phase === "DIAGNOSING" && afterF.safetyViolations === 0 && afterF.completedCount === 0,
-      `Second pinch on PR-204 at Trace 2/3 must NOT attempt repair or log a false LOTO violation (actual: phase=${afterF.phase}, violations=${afterF.safetyViolations})`
+      afterF.phase === "DIAGNOSING" &&
+        afterF.safetyViolations === 0 &&
+        afterF.completedCount === 0 &&
+        beforeF2.currentStepIndex === 0 &&
+        afterF.currentStepIndex === 0 &&
+        afterFRelay.currentStepIndex === 0 &&
+        relayHaloStaysRed,
+      `Second pinch on PR-204 at Trace 2/3 must NOT attempt repair, mutate currentStepIndex, or turn TR-309 halo cyan (actual: phase=${afterF.phase}, stepIdx=${afterF.currentStepIndex}, violations=${afterF.safetyViolations}, relayHaloRed=${relayHaloStaysRed})`
     )
 
     // =========================================================================
-    // TEST G: Begin scanning -> pinch each 3D hotspot during SCANNING
-    // Invariant 4 & 10: Mid-scan hotspot pinches must NOT abort SCANNING unexpectedly.
+    // TEST G & SO-05: Deterministic mid-scan & boundary hotspot interruption test
+    // Tests both 0.75s and 1.2s scanDurationSec configurations across 5 repeated runs
+    // using deterministic state-transition synchronization (Invariant 4 & 10).
     // =========================================================================
-    main.resetExperience()
-    await nextFrame()
-    await interactor.triggerNamedInteractable("BtnPrimaryAction")
-    await sleep(80)
-    const duringScanBeforePinch = interactor.getSnapshot()
-    await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
-    const afterMidScanValve = interactor.getSnapshot()
-    await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
-    const afterMidScanReg = interactor.getSnapshot()
-    await interactor.triggerNamedInteractable("Hotspot_ThermalRelayCore")
-    const afterMidScanRelay = interactor.getSnapshot()
     const scanRingObj = findSceneObjectByName("LaserScanSweepRing")
-    const scanRingEnabledMid = Boolean(scanRingObj && scanRingObj.enabled)
-    print(
-      `[RedTeamAudit] TestG | startPhase=${duringScanBeforePinch.phase} -> afterValve=${afterMidScanValve.phase}, afterReg=${afterMidScanReg.phase}, afterRelay=${afterMidScanRelay.phase}, scanRingEnabled=${scanRingEnabledMid}`
-    )
+    const savedScanDuration = main.scanDurationSec
+    const scanConfigs = [0.75, 1.2, 0.75, 1.2, 0.75]
+    let testGAllPassed = true
+    const testGOutcomes: string[] = []
+
+    for (let runIdx = 0; runIdx < scanConfigs.length; runIdx++) {
+      const cfgSec = scanConfigs[runIdx]
+      main.scanDurationSec = cfgSec
+      main.resetExperience()
+      await nextFrame()
+      await interactor.triggerNamedInteractable("BtnPrimaryAction")
+      // 1. Early & mid-scan SIK hotspot interruption checks (~180ms each via DefaultLeafInteractor.trigger)
+      const earlySnap = interactor.getSnapshot()
+      await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
+      const afterMidValve = interactor.getSnapshot()
+      await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
+      const afterMidReg = interactor.getSnapshot()
+      await interactor.triggerNamedInteractable("Hotspot_ThermalRelayCore")
+      const afterMidRelay = interactor.getSnapshot()
+      const ringMidEnabled = Boolean(scanRingObj && scanRingObj.enabled)
+
+      // 2. Boundary interruption check (~75-80% into scan duration, before countdown expires)
+      if (cfgSec > 1.0) {
+        await sleep(320)
+      }
+      const boundaryBeforePinch = interactor.getSnapshot()
+      main.handle3DHotspotPinch("valve")
+      main.nextStep()
+      main.prevStep()
+      main.confirmCurrentStep()
+      const boundaryAfterPinch = interactor.getSnapshot()
+
+      // 3. Deterministically synchronize with actual transition out of SCANNING -> DIAGNOSING
+      let waitedMs = 0
+      while (interactor.getSnapshot().phase === "SCANNING" && waitedMs < 1200) {
+        await sleep(40)
+        waitedMs += 40
+      }
+      const completedScanSnap = interactor.getSnapshot()
+      const ringAfterScanDisabled = Boolean(scanRingObj && !scanRingObj.enabled)
+
+      const runPass =
+        earlySnap.phase === "SCANNING" &&
+        afterMidValve.phase === "SCANNING" &&
+        afterMidReg.phase === "SCANNING" &&
+        afterMidRelay.phase === "SCANNING" &&
+        ringMidEnabled &&
+        boundaryBeforePinch.phase === "SCANNING" &&
+        boundaryAfterPinch.phase === "SCANNING" &&
+        completedScanSnap.phase === "DIAGNOSING" &&
+        completedScanSnap.faultTraceCount === 1 &&
+        ringAfterScanDisabled
+
+      if (!runPass) {
+        testGAllPassed = false
+      }
+      testGOutcomes.push(
+        `run${runIdx + 1}(${cfgSec}s):${runPass ? "PASS" : "FAIL"}[mid=${afterMidRelay.phase},bnd=${boundaryAfterPinch.phase},end=${completedScanSnap.phase}]`
+      )
+    }
+    main.scanDurationSec = savedScanDuration
+    print(`[RedTeamAudit] TestG_SO05 | outcomes=${testGOutcomes.join(" | ")}`)
     recordCheck(
       "Defect-G",
-      afterMidScanValve.phase === "SCANNING" &&
-        afterMidScanReg.phase === "SCANNING" &&
-        afterMidScanRelay.phase === "SCANNING" &&
-        scanRingEnabledMid,
-      `Pinching 3D hotspots during SCANNING must NOT abort scan early (actual: valve=${afterMidScanValve.phase}, reg=${afterMidScanReg.phase}, relay=${afterMidScanRelay.phase}, ring=${scanRingEnabledMid})`
+      testGAllPassed,
+      `All 5 deterministic scan runs (0.75s & 1.2s + boundary interruptions) must keep SCANNING until completion (outcomes: ${testGOutcomes.join(", ")})`
     )
-    await sleep(1100)
 
     // =========================================================================
     // TEST H: Complete Step 2 -> wait for plume end -> COMPARE on -> COMPARE off
@@ -272,7 +329,8 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
 
     // =========================================================================
     // TEST J: RESET during scanning, animations, hover, comparison, and completion
-    // Invariant 9: Reset completely restores the initial state & 3D transforms immediately.
+    // Invariant 9: Reset completely restores the initial state & 3D transforms immediately,
+    // while blocked button presses during standby preserve active hover scale (Defect J).
     // =========================================================================
     // J1: Reset mid-scan and ensure scan timer does not fire later
     main.resetExperience()
@@ -288,7 +346,17 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
       `Reset during SCANNING must cancel scanCountdown and keep READY_TO_SCAN (actual: phase=${afterJ1.phase})`
     )
 
-    // J2: Reset from completed + X-Ray + hover + mechanical articulation and check immediate 3D transform restoration
+    // J2: Verify active hover scale in READY_TO_SCAN is preserved across blocked standby button clicks,
+    // and then immediately restored to 1.0 upon Reset from completed + X-Ray + hover + mechanical articulation.
+    const hotspotValveObj = findSceneObjectByName("Hotspot_CoolantValve")
+    if (hotspotValveObj) {
+      hotspotValveObj.getTransform().setLocalScale(new vec3(1.08, 1.08, 1.08))
+    }
+    main.nextStep()
+    main.prevStep()
+    main.toggleComparisonMode()
+    const hoverScaleDuringStandbyBlock = hotspotValveObj ? hotspotValveObj.getTransform().getLocalScale().x : -999
+
     main.triggerScan(true)
     await nextFrame()
     await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
@@ -298,7 +366,6 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
     await interactor.triggerNamedInteractable("BtnPrimaryAction") // Step 3
     await interactor.triggerNamedInteractable("BtnPrimaryAction") // Step 4 (COMPLETED)
     await sleep(300) // Allow 3D pivots to move toward completed angles (+90 deg valve, -38 deg gauge, 0.0 cm relay lift)
-    const hotspotValveObj = findSceneObjectByName("Hotspot_CoolantValve")
     if (hotspotValveObj) {
       hotspotValveObj.getTransform().setLocalScale(new vec3(1.08, 1.08, 1.08)) // Simulate stuck hover scale
     }
@@ -312,37 +379,194 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
     const valveHoverScaleX = hotspotValveObj ? hotspotValveObj.getTransform().getLocalScale().x : -999
     const plumeAfterReset = Boolean(purgePlumeObj && purgePlumeObj.enabled)
     print(
-      `[RedTeamAudit] TestJ2 | Immediate post-reset: wheelPosZ=${wheelPosZ.toFixed(3)}, relayPosY=${relayPosY.toFixed(3)}, valveScaleX=${valveHoverScaleX.toFixed(3)}, plume=${plumeAfterReset}`
+      `[RedTeamAudit] TestJ2 | hoverStandbyPreserved=${hoverScaleDuringStandbyBlock.toFixed(3)} | Immediate post-reset: wheelPosZ=${wheelPosZ.toFixed(3)}, relayPosY=${relayPosY.toFixed(3)}, valveScaleX=${valveHoverScaleX.toFixed(3)}, plume=${plumeAfterReset}`
     )
     recordCheck(
       "Defect-J2",
-      Math.abs(wheelPosZ - 0.5) < 0.05 &&
+      Math.abs(hoverScaleDuringStandbyBlock - 1.08) < 0.01 &&
+        Math.abs(wheelPosZ - 0.5) < 0.05 &&
         relayPosY > 1.15 &&
         Math.abs(valveHoverScaleX - 1.0) < 0.01 &&
         !plumeAfterReset &&
         !Boolean(valveInt && valveInt.enabled) &&
         !Boolean(regInt && regInt.enabled) &&
         !Boolean(relayInt && relayInt.enabled),
-      `Reset must immediately restore 3D transforms, hover scale, X-Ray internals, and timers (actual: wheelPosZ=${wheelPosZ.toFixed(3)}, relayPosY=${relayPosY.toFixed(3)}, valveScaleX=${valveHoverScaleX.toFixed(3)})`
+      `Standby blocked clicks must preserve 1.08x hover scale while Reset immediately restores 1.0x hover scale, 3D transforms, X-Ray internals, and timers (actual: standbyHover=${hoverScaleDuringStandbyBlock.toFixed(3)}, wheelPosZ=${wheelPosZ.toFixed(3)}, relayPosY=${relayPosY.toFixed(3)}, valveScaleX=${valveHoverScaleX.toFixed(3)})`
     )
 
     // =========================================================================
-    // PHASE 2: 120 DETERMINISTIC SEEDED ADVERSARIAL EVENT SEQUENCES (10 INVARIANTS)
+    // THIRD-ORDER STRESS DEFECT REGRESSION TESTS (SO-01, SO-02, SO-03, SO-04, F-04, F-11, PRES-02)
+    // =========================================================================
+
+    // SO-01: Repeated CV-101 pinch after LOTO must NOT jump to Step 4 or log a false safety violation
+    main.resetExperience()
+    await nextFrame()
+    // Also verify F-04 (selecting uninspected PR-204 from standby gives accurate PR-204 instruction) and F-11 (no advisory penalty on standby entry)
+    const standbyRegSnap = main.selectHotspot("regulator")
+    const f04StepInstruction = interactor.getLabelText("StepInstructionText")
+    const f04AndF11Pass =
+      standbyRegSnap.advisoryCount === 0 &&
+      f04StepInstruction.indexOf("Confirm [TR-309] overheat symptom first") >= 0 &&
+      f04StepInstruction.indexOf("before inspecting [CV-101]") < 0
+    recordCheck(
+      "Defect-F04-F11",
+      f04AndF11Pass,
+      `Standby regulator selection must not increment advisoryCount (${standbyRegSnap.advisoryCount}) and must display accurate PR-204 instruction ("${f04StepInstruction}")`
+    )
+
+    main.resetExperience()
+    await nextFrame()
+    main.triggerScan(true)
+    await nextFrame()
+    await interactor.triggerNamedInteractable("Hotspot_PressureRegulator") // Trace 2/3
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve") // Trace 3/3
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve") // Execute Step 1 (CV-101 LOTO)
+    const afterStep1Loto = interactor.getSnapshot()
+    // Pinch CV-101 twice again after LOTO:
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
+    const afterRepeatPinch1 = interactor.getSnapshot()
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
+    const afterRepeatPinch2 = interactor.getSnapshot()
+    const so01Warning = interactor.getLabelText("SafetyWarningText")
+    print(
+      `[RedTeamAudit] TestSO01 | step1Done=${afterStep1Loto.completedSteps[0]} | pinch1: stepIdx=${afterRepeatPinch1.currentStepIndex}, violations=${afterRepeatPinch1.safetyViolations} | pinch2: stepIdx=${afterRepeatPinch2.currentStepIndex}, violations=${afterRepeatPinch2.safetyViolations} | feedback="${so01Warning}"`
+    )
+    recordCheck(
+      "Stress-SO-01",
+      afterRepeatPinch1.currentStepIndex === 1 &&
+        afterRepeatPinch2.currentStepIndex === 1 &&
+        afterRepeatPinch1.safetyViolations === 0 &&
+        afterRepeatPinch2.safetyViolations === 0 &&
+        afterRepeatPinch2.completedCount === 1 &&
+        so01Warning.indexOf("LOTO VERIFIED [CV-101]") >= 0,
+      `Repeated CV-101 pinches after Step 1 LOTO must stay on Step 2 (index 1) with 0 violations and LOTO VERIFIED feedback (actual: stepIdx=${afterRepeatPinch2.currentStepIndex}, violations=${afterRepeatPinch2.safetyViolations}, feedback="${so01Warning}")`
+    )
+
+    // SO-03: Rapid double-tap on BtnPrimaryAction must NOT execute two different repair steps back-to-back
+    main.resetExperience()
+    await nextFrame()
+    main.triggerScan(true)
+    await nextFrame()
+    await interactor.triggerNamedInteractable("Hotspot_PressureRegulator") // Trace 2/3
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve") // Trace 3/3
+    // Fire two rapid consecutive primary button taps without the 130ms inter-step pause:
+    await interactor.triggerNamedInteractable("BtnPrimaryAction", true)
+    await interactor.triggerNamedInteractable("BtnPrimaryAction", true)
+    const afterRapidDoubleTap = interactor.getSnapshot()
+    // Now wait 140ms and perform a deliberate tap for Step 2:
+    await sleep(140)
+    await interactor.triggerNamedInteractable("BtnPrimaryAction", true)
+    const afterDeliberateTap = interactor.getSnapshot()
+    print(
+      `[RedTeamAudit] TestSO03 | afterRapidDoubleTap=${afterRapidDoubleTap.completedCount}/4 (step=${afterRapidDoubleTap.currentStep.stepNumber}/4) | afterDeliberateTap=${afterDeliberateTap.completedCount}/4`
+    )
+    recordCheck(
+      "Stress-SO-03",
+      afterRapidDoubleTap.completedCount === 1 &&
+        afterRapidDoubleTap.currentStepIndex === 1 &&
+        afterDeliberateTap.completedCount === 2,
+      `Rapid double-tap on BtnPrimaryAction must execute only Step 1 (actual=${afterRapidDoubleTap.completedCount}), while deliberate tap after 140ms executes Step 2 (actual=${afterDeliberateTap.completedCount})`
+    )
+
+    // SO-02: Selecting repaired/LOTO components during REPAIRING must show current repaired status, never stale TRACE [1/3] or [2/3]
+    // Currently at 2/4 DONE (Step 1 CV-101 LOTO + Step 2 PR-204 purged to 38 PSI)
+    await interactor.triggerNamedInteractable("BtnHotspotRegulator")
+    const so02RegSnap = interactor.getSnapshot()
+    const so02RegWarning = interactor.getLabelText("SafetyWarningText")
+    const so02RegTitle = interactor.getLabelText("ComponentTitleText")
+    await interactor.triggerNamedInteractable("BtnHotspotValve")
+    const so02ValveWarning = interactor.getLabelText("SafetyWarningText")
+    await interactor.triggerNamedInteractable("BtnHotspotRelay")
+    const so02RelayActiveWarning = interactor.getLabelText("SafetyWarningText")
+    // Execute Step 3 (TR-309 reseated to 46C) and re-select TR-309:
+    await interactor.triggerNamedInteractable("BtnPrimaryAction")
+    await interactor.triggerNamedInteractable("BtnHotspotRelay")
+    const so02RelayRepairedWarning = interactor.getLabelText("SafetyWarningText")
+    print(
+      `[RedTeamAudit] TestSO02 | regWarning="${so02RegWarning}" | valveWarning="${so02ValveWarning}" | relayActive="${so02RelayActiveWarning}" | relayRepaired="${so02RelayRepairedWarning}"`
+    )
+    recordCheck(
+      "Stress-SO-02",
+      so02RegSnap.systemPressurePsi === 38 &&
+        so02RegTitle.indexOf("NOMINAL: REGULATOR AT 38 PSI") >= 0 &&
+        so02RegWarning.indexOf("REPAIRED [PR-204]") >= 0 &&
+        so02RegWarning.indexOf("TRACE [") < 0 &&
+        so02ValveWarning.indexOf("LOTO VERIFIED [CV-101]") >= 0 &&
+        so02ValveWarning.indexOf("TRACE [") < 0 &&
+        so02RelayActiveWarning.indexOf("ACTIVE TARGET [TR-309]") >= 0 &&
+        so02RelayActiveWarning.indexOf("TRACE [") < 0 &&
+        so02RelayRepairedWarning.indexOf("REPAIRED [TR-309]") >= 0 &&
+        so02RelayRepairedWarning.indexOf("TRACE [") < 0,
+      `Inspecting components during REPAIRING must display current repaired/LOTO/active status without stale TRACE [1/3] or [2/3] strings`
+    )
+
+    // SO-04: Comparison mode at 3/4 DONE must be strictly read-only (no [PINCH: LOTO/PURGE/RESEAT] badges, primary button exits compare)
+    await interactor.triggerNamedInteractable("BtnToggleComparison") // COMPARE ON at 3/4 DONE
+    const so04Snap = interactor.getSnapshot()
+    const so04ValveBadge = interactor.getLabelText("CalloutValveBadge")
+    const so04RegBadge = interactor.getLabelText("CalloutRegulatorBadge")
+    const so04RelayBadge = interactor.getLabelText("CalloutRelayBadge")
+    const so04StepHeader = interactor.getLabelText("StepHeaderText")
+    const so04BtnLabel = interactor.getLabelText("BtnPrimaryAction_Label")
+    // Verify pinching 3D hotspot in comparison mode does NOT execute Step 4, and clicking BtnPrimaryAction exits comparison mode without executing Step 4:
+    await interactor.triggerNamedInteractable("BtnPrimaryAction", true)
+    const afterSo04ExitCompare = interactor.getSnapshot()
+    print(
+      `[RedTeamAudit] TestSO04 | valveBadge="${so04ValveBadge}" | regBadge="${so04RegBadge}" | relayBadge="${so04RelayBadge}" | header="${so04StepHeader}" | btn="${so04BtnLabel}" | afterPrimaryExitCompare: compare=${afterSo04ExitCompare.comparisonFaultPreview}, completed=${afterSo04ExitCompare.completedCount}/4`
+    )
+    recordCheck(
+      "Stress-SO-04",
+      so04Snap.comparisonFaultPreview === true &&
+        so04ValveBadge === "CV-101: 18% FLOW [CAVITATION]" &&
+        so04RegBadge === "PR-204: 142 PSI [142 PSI BLOCK]" &&
+        so04RelayBadge === "TR-309: 118C [OVERHEAT]" &&
+        so04StepHeader === "COMPARE MODE: INITIAL FAULT SNAPSHOT (READ-ONLY)" &&
+        so04BtnLabel === "EXIT COMPARE TO RESUME REPAIR" &&
+        afterSo04ExitCompare.comparisonFaultPreview === false &&
+        afterSo04ExitCompare.completedCount === 3,
+      `Comparison mode at 3/4 DONE must show read-only fault badges without [PINCH: LOTO/PURGE/RESEAT] and exit comparison before executing Step 4`
+    )
+
+    // PRES-02: Verify actual runtime SceneObject identifiers match documented names
+    const chevronObj = findSceneObjectByName("ActiveStepTargetChevron")
+    let allPulseRingsFound = true
+    for (let ringIdx = 0; ringIdx < 6; ringIdx++) {
+      if (!findSceneObjectByName(`CoolantFlowPulseRing_${ringIdx}`)) {
+        allPulseRingsFound = false
+      }
+    }
+    recordCheck(
+      "PRES-02-SceneObjectNames",
+      chevronObj !== null && allPulseRingsFound,
+      `Runtime SceneObjects ActiveStepTargetChevron and CoolantFlowPulseRing_0..5 must exist in scene`
+    )
+
+    // =========================================================================
+    // PHASE 2: 120 DETERMINISTIC SEEDED ADVERSARIAL EVENT SEQUENCES (INVARIANTS 1-12)
+    // Covers M1-M8 mutations including sequential steps (M4), mid-sequence Reset (M6),
+    // repeated completed-component pinches (M7 / SO-01), and rapid double-taps (M8 / SO-03).
     // =========================================================================
     let invariantFailures = 0
     const failingSeeds: string[] = []
     const totalSeeds = 120
+    main.verboseLogging = false
 
     for (let seed = 1; seed <= totalSeeds; seed++) {
       const rng = new SeededPRNG(seed * 7919)
       main.resetExperience()
-      const seqLen = 6 + rng.nextInt(15) // 6..20 actions per sequence
+      const seqLen = 8 + rng.nextInt(15) // 8..22 actions per sequence
       const traceLog: string[] = ["RESET"]
 
       for (let stepIdx = 0; stepIdx < seqLen; stepIdx++) {
         const before = main.getSnapshot()
-        const actionId = rng.nextInt(12)
+        const isFinalResetStep = stepIdx === seqLen - 1
+        const actionId = isFinalResetStep ? 14 : rng.nextInt(14)
         let actionName = ""
+        let rapidDoubleDelta = 0
+
+        // Simulate 350ms of elapsed time between distinct fuzzer steps so deliberate single actions are not debounced,
+        // while actionId === 12 ("RapidDoubleConfirm") tests sub-240ms back-to-back double taps!
+        ;(main as any).lastConfirmStepTimeSec -= 0.35
 
         switch (actionId) {
           case 0:
@@ -378,8 +602,15 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
             main.selectHotspot("relay")
             break
           case 8:
-            actionName = "NextStep"
-            main.nextStep()
+            if (rng.nextInt(2) === 0) {
+              actionName = "NextStep"
+              main.nextStep()
+            } else {
+              actionName = "NextStep+Confirm"
+              main.nextStep()
+              ;(main as any).lastConfirmStepTimeSec -= 0.35
+              main.confirmCurrentStep()
+            }
             break
           case 9:
             actionName = "PrevStep"
@@ -397,11 +628,37 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
               main.toggleXrayMode()
             }
             break
+          case 12: {
+            actionName = "RapidDoubleConfirm"
+            const c0 = main.getSnapshot().completedCount
+            main.confirmCurrentStep()
+            main.confirmCurrentStep()
+            const c1 = main.getSnapshot().completedCount
+            rapidDoubleDelta = c1 - c0
+            break
+          }
+          case 13: {
+            actionName = "RepeatValvePinch"
+            main.handle3DHotspotPinch("valve")
+            main.handle3DHotspotPinch("valve")
+            break
+          }
+          case 14: {
+            actionName = "ResetMidSequence"
+            if (hotspotValveObj) {
+              hotspotValveObj.getTransform().setLocalScale(new vec3(1.08, 1.08, 1.08))
+            }
+            if (valveWheelPivot) {
+              valveWheelPivot.getTransform().setLocalPosition(new vec3(0, 0, 1.25))
+            }
+            main.resetExperience()
+            break
+          }
         }
         traceLog.push(actionName)
         const after = main.getSnapshot()
 
-        // Invariant 1: No repair step may be completed unless all 3 upstream components were traced
+        // Invariant 1 (M1): No repair step may be completed unless all 3 upstream components were traced
         if (after.completedCount > 0 && !after.faultTraceComplete) {
           invariantFailures++
           failingSeeds.push(`Seed ${seed} [Inv1:RepairBeforeTrace] via ${traceLog.join(" -> ")}`)
@@ -413,9 +670,19 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
           failingSeeds.push(`Seed ${seed} [Inv2:NavMarkedTraced] via ${traceLog.join(" -> ")}`)
           break
         }
+        // Invariant 3 (M4): Strict sequential LOTO repair order (Step i cannot be completed while Step i-1 is incomplete)
+        if (
+          (after.completedSteps[1] && !after.completedSteps[0]) ||
+          (after.completedSteps[2] && !after.completedSteps[1]) ||
+          (after.completedSteps[3] && !after.completedSteps[2])
+        ) {
+          invariantFailures++
+          failingSeeds.push(`Seed ${seed} [Inv3:OutOfOrderStepCompleted] via ${traceLog.join(" -> ")}`)
+          break
+        }
         // Invariant 4: Once a component is traced (without Reset), faultTraceCount cannot decrease and trace order (relay >= regulator >= valve) holds
         if (
-          after.faultTraceCount < before.faultTraceCount ||
+          (actionName !== "ResetMidSequence" && after.faultTraceCount < before.faultTraceCount) ||
           (after.tracedHotspots.regulator && !after.tracedHotspots.relay) ||
           (after.tracedHotspots.valve && !after.tracedHotspots.regulator)
         ) {
@@ -423,7 +690,7 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
           failingSeeds.push(`Seed ${seed} [Inv4:TraceCorrupted] via ${traceLog.join(" -> ")}`)
           break
         }
-        // Invariant 5: Hidden diagnostic values (142 PSI, 18%) and uninspected 3D X-Ray internals stay hidden until inspected
+        // Invariant 5 (M2 & M3): Hidden diagnostic values (142 PSI, 18%) and uninspected 3D X-Ray internals stay hidden until inspected
         const regBadge = interactor.getLabelText("CalloutRegulatorBadge")
         const valveBadge = interactor.getLabelText("CalloutValveBadge")
         if (!after.tracedHotspots.regulator && regBadge.indexOf("142 PSI") >= 0) {
@@ -434,6 +701,22 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
         if (!after.tracedHotspots.valve && valveBadge.indexOf("18%") >= 0) {
           invariantFailures++
           failingSeeds.push(`Seed ${seed} [Inv5:Spoiler18Pct] via ${traceLog.join(" -> ")}`)
+          break
+        }
+        if (
+          (!after.tracedHotspots.valve &&
+            after.completedCount === 0 &&
+            !after.comparisonFaultPreview &&
+            after.phase !== "SCANNING" &&
+            Boolean(valveInt && valveInt.enabled)) ||
+          (!after.tracedHotspots.regulator &&
+            after.completedCount === 0 &&
+            !after.comparisonFaultPreview &&
+            after.phase !== "SCANNING" &&
+            Boolean(regInt && regInt.enabled))
+        ) {
+          invariantFailures++
+          failingSeeds.push(`Seed ${seed} [Inv5:XrayInternalSpoiler] via ${traceLog.join(" -> ")}`)
           break
         }
         // Invariant 6: Comparison mode is only active when completedCount > 0 or phase === "COMPLETED", and never mutates completedCount or safetyViolations
@@ -449,30 +732,75 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
           }
         }
         // Invariant 7: Safety violations never occur while faultTraceComplete is false
-        if (!before.faultTraceComplete && after.safetyViolations > before.safetyViolations) {
+        if (actionName !== "ResetMidSequence" && !before.faultTraceComplete && after.safetyViolations > before.safetyViolations) {
           invariantFailures++
           failingSeeds.push(`Seed ${seed} [Inv7:PrematureViolationDuringTrace] via ${traceLog.join(" -> ")}`)
           break
         }
-        // Invariant 8: Scores and grades reflect competency (>=2 violations cannot receive A or B grade)
+        // Invariant 8 (M5): Scores and grades reflect competency (>=2 violations cannot receive A or B grade)
         if (after.safetyViolations >= 2 && (after.traineeGrade.startsWith("A") || after.traineeGrade.startsWith("B"))) {
           invariantFailures++
           failingSeeds.push(`Seed ${seed} [Inv8:InflatedGrade:${after.traineeGrade}] via ${traceLog.join(" -> ")}`)
           break
         }
+        // Invariant 9 (M6): ResetMidSequence immediately restores phase, telemetry, 3D mechanical transforms, hover scale, and plume
+        if (actionName === "ResetMidSequence") {
+          const wZ = valveWheelPivot ? valveWheelPivot.getTransform().getLocalPosition().z : -999
+          const hScale = hotspotValveObj ? hotspotValveObj.getTransform().getLocalScale().x : -999
+          if (
+            after.phase !== "READY_TO_SCAN" ||
+            after.completedCount !== 0 ||
+            after.faultTraceCount !== 0 ||
+            Math.abs(wZ - 0.5) >= 0.05 ||
+            Math.abs(hScale - 1.0) >= 0.01 ||
+            Boolean(purgePlumeObj && purgePlumeObj.enabled)
+          ) {
+            invariantFailures++
+            failingSeeds.push(
+              `Seed ${seed} [Inv9:ResetIncomplete:wZ=${wZ.toFixed(2)},hScale=${hScale.toFixed(2)}] via ${traceLog.join(" -> ")}`
+            )
+            break
+          }
+        }
         // Invariant 10: SCANNING phase cannot be aborted into DIAGNOSING/REPAIRING by hotspots, navigation, or confirmStep
-        if (before.phase === "SCANNING" && actionName !== "Scan(Immediate)" && after.phase !== "SCANNING") {
+        if (
+          before.phase === "SCANNING" &&
+          actionName !== "Scan(Immediate)" &&
+          actionName !== "ResetMidSequence" &&
+          after.phase !== "SCANNING"
+        ) {
           invariantFailures++
           failingSeeds.push(`Seed ${seed} [Inv10:ScanAbortedBy:${actionName}] via ${traceLog.join(" -> ")}`)
           break
         }
+        // Invariant 11 (M8 / SO-03): RapidDoubleConfirm must never execute more than 1 repair step in a single unacknowledged burst
+        if (actionName === "RapidDoubleConfirm" && rapidDoubleDelta > 1) {
+          invariantFailures++
+          failingSeeds.push(`Seed ${seed} [Inv11:RapidDoubleConfirmExecuted:${rapidDoubleDelta}] via ${traceLog.join(" -> ")}`)
+          break
+        }
+        // Invariant 12 (M7 / SO-01): Selecting/pinching CV-101 after Step 1 LOTO while Steps 2 or 3 are incomplete must not jump to Step 4 or log a safety violation
+        if (
+          (actionName === "Pinch3D(valve)" || actionName === "SelectPill(valve)" || actionName === "RepeatValvePinch") &&
+          before.completedSteps[0] &&
+          (!before.completedSteps[1] || !before.completedSteps[2])
+        ) {
+          if (after.currentStepIndex === 3 || after.safetyViolations > before.safetyViolations) {
+            invariantFailures++
+            failingSeeds.push(
+              `Seed ${seed} [Inv12:CompletedValveJumpedToStep4:stepIdx=${after.currentStepIndex},viol=${after.safetyViolations}] via ${traceLog.join(" -> ")}`
+            )
+            break
+          }
+        }
       }
 
-      if (seed % 30 === 0) {
+      if (seed % 10 === 0) {
         await nextFrame()
       }
     }
 
+    main.verboseLogging = true
     main.resetExperience()
     await nextFrame()
 
@@ -482,7 +810,7 @@ export class FieldFixExhaustiveRedTeamScenario extends Scenario {
     recordCheck(
       "Phase2-120-Seeds",
       invariantFailures === 0,
-      `All ${totalSeeds} deterministic adversarial sequences must satisfy Invariants 1-10 (failingSeeds=${invariantFailures}/${totalSeeds})`
+      `All ${totalSeeds} deterministic adversarial sequences must satisfy Invariants 1-12 (failingSeeds=${invariantFailures}/${totalSeeds})`
     )
 
     expect(

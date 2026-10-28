@@ -886,7 +886,53 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     return obj
   }
 
+  public resetTransforms(): void {
+    this.purgePlumeTimer = 0
+    this.scanTimer = 0
+    this.pinchFlashTimers = { valve: 0, regulator: 0, relay: 0 }
+    this.interlockFlashTimers = { valve: 0, regulator: 0, relay: 0 }
+    this.currentXrayBlend = 0
+    this.currentValveAngleDeg = 0
+    this.targetValveAngleDeg = 0
+    this.currentGaugeAngleDeg = 0
+    this.targetGaugeAngleDeg = 0
+    this.currentRelayLiftCm = 1.35
+    this.targetRelayLiftCm = 1.35
+    this.currentRelayRotationDeg = 0
+    this.targetRelayRotationDeg = 0
+    this.currentChevronPos = new vec3(6.8, 7.0, 2.0)
+    this.targetChevronPos = new vec3(6.8, 7.0, 2.0)
+    if (this.regulatorPurgePlumeObj) {
+      this.regulatorPurgePlumeObj.enabled = false
+    }
+    if (this.valveHotspotRoot) {
+      this.valveHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
+    }
+    if (this.regulatorHotspotRoot) {
+      this.regulatorHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
+    }
+    if (this.relayHotspotRoot) {
+      this.relayHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
+    }
+    if (this.valveWheelPivot) {
+      this.valveWheelPivot.getTransform().setLocalPosition(new vec3(0, 0, 0.5))
+      this.valveWheelPivot.getTransform().setLocalRotation(quat.quatIdentity())
+    }
+    if (this.gaugeNeedlePivot) {
+      this.gaugeNeedlePivot.getTransform().setLocalPosition(new vec3(0, -0.2, 0.42))
+      this.gaugeNeedlePivot.getTransform().setLocalRotation(quat.quatIdentity())
+    }
+    if (this.relayCorePivot) {
+      this.relayCorePivot.getTransform().setLocalPosition(new vec3(0, 1.35, -1.2))
+      this.relayCorePivot.getTransform().setLocalRotation(quat.quatIdentity())
+    }
+    if (this.activeTargetChevronObj) {
+      this.activeTargetChevronObj.getTransform().setLocalPosition(new vec3(6.8, 7.0, 2.0))
+    }
+  }
+
   public applySnapshot(snapshot: FieldFixUISnapshot): void {
+    const previousPhase = this.currentPhase
     this.lastSnapshot = snapshot
     this.currentPhase = snapshot.phase
     this.selectedHotspot = snapshot.selectedHotspot
@@ -903,50 +949,10 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       ? [false, false, false, false]
       : [...snapshot.completedSteps]
 
-    // Trigger 3D upward vapor relief plume ONLY when actual Step 2 transitions from incomplete to completed
-    if (snapshot.phase === "READY_TO_SCAN") {
-      this.purgePlumeTimer = 0
-      this.scanTimer = 0
-      this.pinchFlashTimers = { valve: 0, regulator: 0, relay: 0 }
-      this.interlockFlashTimers = { valve: 0, regulator: 0, relay: 0 }
-      this.currentXrayBlend = 0
-      this.currentValveAngleDeg = 0
-      this.targetValveAngleDeg = 0
-      this.currentGaugeAngleDeg = 0
-      this.targetGaugeAngleDeg = 0
-      this.currentRelayLiftCm = 1.35
-      this.targetRelayLiftCm = 1.35
-      this.currentRelayRotationDeg = 0
-      this.targetRelayRotationDeg = 0
-      this.currentChevronPos = new vec3(6.8, 7.0, 2.0)
-      this.targetChevronPos = new vec3(6.8, 7.0, 2.0)
-      if (this.regulatorPurgePlumeObj) {
-        this.regulatorPurgePlumeObj.enabled = false
-      }
-      if (this.valveHotspotRoot) {
-        this.valveHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
-      }
-      if (this.regulatorHotspotRoot) {
-        this.regulatorHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
-      }
-      if (this.relayHotspotRoot) {
-        this.relayHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
-      }
-      if (this.valveWheelPivot) {
-        this.valveWheelPivot.getTransform().setLocalPosition(new vec3(0, 0, 0.5))
-        this.valveWheelPivot.getTransform().setLocalRotation(quat.quatIdentity())
-      }
-      if (this.gaugeNeedlePivot) {
-        this.gaugeNeedlePivot.getTransform().setLocalPosition(new vec3(0, -0.2, 0.42))
-        this.gaugeNeedlePivot.getTransform().setLocalRotation(quat.quatIdentity())
-      }
-      if (this.relayCorePivot) {
-        this.relayCorePivot.getTransform().setLocalPosition(new vec3(0, 1.35, -1.2))
-        this.relayCorePivot.getTransform().setLocalRotation(quat.quatIdentity())
-      }
-      if (this.activeTargetChevronObj) {
-        this.activeTargetChevronObj.getTransform().setLocalPosition(new vec3(6.8, 7.0, 2.0))
-      }
+    // Reset 3D mechanical transforms & hover scales ONLY when transitioning into READY_TO_SCAN (or via explicit resetTransforms()),
+    // so blocked button clicks while already in READY_TO_SCAN do not wipe active hover scale (Defect J).
+    if (snapshot.phase === "READY_TO_SCAN" && previousPhase !== "READY_TO_SCAN") {
+      this.resetTransforms()
     } else if (rawStep2Done && !this.previousStep2Done && !snapshot.comparisonFaultPreview) {
       this.purgePlumeTimer = 1.8
     }
@@ -1124,8 +1130,8 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       if (snapshot.phase === "READY_TO_SCAN" && !snapshot.comparisonFaultPreview) {
         return id === "relay" ? this.haloMeshRed : this.haloMeshAmber
       }
-      // Keep TR-309 critical overheat halo crimson red unless it is actively the current repair target
-      if (id === "relay" && snapshot.currentStep.targetHotspot !== "relay") {
+      // Keep TR-309 critical overheat halo crimson red throughout incomplete upstream tracing and whenever it is not actively the current repair target
+      if (id === "relay" && (!snapshot.faultTraceComplete || snapshot.currentStep.targetHotspot !== "relay")) {
         return this.haloMeshRed
       }
       if (

@@ -452,27 +452,40 @@ export class FieldFixStateMachine {
       }
     }
 
-    // Jump to the first incomplete repair step associated with this hotspot if in DIAGNOSING/REPAIRING
-    if (this._phase !== "COMPLETED") {
-      for (let i = 0; i < REPAIR_STEPS.length; i++) {
-        if (REPAIR_STEPS[i].targetHotspot === hotspotId && !this._completedSteps[i]) {
-          this._currentStepIndex = i
-          break
-        }
-      }
-    }
-
     const firstIncomplete = this.getFirstIncompleteStepIndex()
     const comp = HOTSPOT_CATALOG[hotspotId]
     const traceCount = this.computeFaultTraceCount()
     const traceComplete = traceCount >= 3
 
+    // Update _currentStepIndex ONLY after 3/3 upstream fault trace is complete:
+    // - During incomplete tracing (1/3 or 2/3), keep _currentStepIndex = 0 (Defect F).
+    // - After Step 1 LOTO is completed, selecting CV-101 ("valve") while Steps 2 or 3 are incomplete
+    //   inspects the completed Step 1 LOTO state rather than jumping to Step 4 (SO-01).
+    if (!traceComplete) {
+      this._currentStepIndex = 0
+    } else if (this._phase !== "COMPLETED") {
+      if (hotspotId === "valve" && this._completedSteps[0] && firstIncomplete >= 0 && firstIncomplete < 3) {
+        this._currentStepIndex = firstIncomplete
+      } else if (this.isHotspotRepaired(hotspotId) && firstIncomplete >= 0) {
+        this._currentStepIndex = firstIncomplete
+      } else {
+        for (let i = 0; i < REPAIR_STEPS.length; i++) {
+          if (REPAIR_STEPS[i].targetHotspot === hotspotId && !this._completedSteps[i]) {
+            this._currentStepIndex = i
+            break
+          }
+        }
+      }
+    }
+
     if (this._phase === "COMPLETED") {
-      this._whatChangedSummary = comp.causalTraceSummary
-      this._activeFeedbackText = `INSPECTING [${comp.subsystemCode}]: Subsystem verified nominal.`
+      this._whatChangedSummary = comp.repairedSummary
+      this._activeFeedbackText = `INSPECTING [${comp.subsystemCode}]: ${comp.repairedSummary}`
       this._activeFeedbackSeverity = "nominal"
     } else if (skippedUpstreamOrder) {
-      this._advisoryCount++
+      if (!wasInStandby) {
+        this._advisoryCount++
+      }
       if (hotspotId === "regulator") {
         this._whatChangedSummary =
           "SYMPTOM CONFIRMED [1/3]: TR-309 is overheating (118C). Pinch [PR-204] again to inspect its internal regulator state."
@@ -485,6 +498,27 @@ export class FieldFixStateMachine {
           "TRACE GUIDANCE: Do not skip ahead! Follow the 3D chevron and pinch midstream component [PR-204] first."
       }
       this._activeFeedbackSeverity = "warning"
+    } else if (
+      traceComplete &&
+      hotspotId === "valve" &&
+      this._completedSteps[0] &&
+      !this._completedSteps[3] &&
+      firstIncomplete >= 0 &&
+      firstIncomplete < 3
+    ) {
+      const nextReqStep = REPAIR_STEPS[firstIncomplete]
+      const nextReqCode = HOTSPOT_CATALOG[nextReqStep.targetHotspot].subsystemCode
+      this._whatChangedSummary = comp.lockedOutSummary || comp.repairedSummary
+      this._activeFeedbackText =
+        `LOTO VERIFIED [CV-101]: Intake locked at 0% Flow (${this._completedSteps[1] ? 38 : 128} PSI). Next -> Step ${nextReqStep.stepNumber}/4 [${nextReqCode}].`
+      this._activeFeedbackSeverity = "nominal"
+    } else if (traceComplete && this.isHotspotRepaired(hotspotId)) {
+      const nextReqStep = firstIncomplete >= 0 ? REPAIR_STEPS[firstIncomplete] : REPAIR_STEPS[3]
+      const nextReqCode = HOTSPOT_CATALOG[nextReqStep.targetHotspot].subsystemCode
+      this._whatChangedSummary = comp.repairedSummary
+      this._activeFeedbackText =
+        `REPAIRED [${comp.subsystemCode}]: ${comp.repairedSummary} Next -> Step ${nextReqStep.stepNumber}/4 [${nextReqCode}].`
+      this._activeFeedbackSeverity = "nominal"
     } else if (traceComplete && firstIncomplete >= 0 && this._currentStepIndex > firstIncomplete) {
       this._advisoryCount++
       this._whatChangedSummary = comp.causalTraceSummary
@@ -497,6 +531,13 @@ export class FieldFixStateMachine {
       this._whatChangedSummary = comp.causalTraceSummary
       this._activeFeedbackText = HOTSPOT_CATALOG.valve.causalLinkHint
       this._activeFeedbackSeverity = "nominal"
+    } else if (traceComplete && firstIncomplete > 0 && this._currentStepIndex === firstIncomplete) {
+      const activeStep = REPAIR_STEPS[firstIncomplete]
+      this._whatChangedSummary =
+        hotspotId === "valve" && comp.lockedOutSummary ? comp.lockedOutSummary : comp.causalTraceSummary
+      this._activeFeedbackText =
+        `ACTIVE TARGET [${comp.subsystemCode}]: ${activeStep.safetyWarning} (${activeStep.verificationMetric})`
+      this._activeFeedbackSeverity = "warning"
     } else {
       this._whatChangedSummary = comp.causalTraceSummary
       this._activeFeedbackText = `${comp.causalLinkHint}`
@@ -667,7 +708,6 @@ export class FieldFixStateMachine {
 
     const executedStep = this._currentStepIndex
     this._completedSteps[executedStep] = true
-    this._tracedHotspots[REPAIR_STEPS[executedStep].targetHotspot] = true
     this._interlockFlashHotspot = null
     this._phase = "REPAIRING"
 
@@ -682,7 +722,6 @@ export class FieldFixStateMachine {
       this._whatChangedSummary =
         "STEP 3 CAUSE->EFFECT: TR-309 thermal plunger reseated (-1.35 cm) -> Overheat cleared (118C -> 46C), ready for flow restore."
     } else if (executedStep === 3) {
-      this._tracedHotspots = { valve: true, regulator: true, relay: true }
       this._whatChangedSummary =
         "STEP 4 CAUSE->EFFECT: LOTO removed & CV-101 opened (+90°) -> 100% laminar cryo-flow restored (42C | 45 PSI Nominal)."
     }
@@ -690,7 +729,6 @@ export class FieldFixStateMachine {
     const allDone = this._completedSteps.every((v) => v)
     if (allDone) {
       this._phase = "COMPLETED"
-      this._tracedHotspots = { valve: true, regulator: true, relay: true }
       const score = Math.max(60, 100 - this._safetyViolations * 15)
       const gradeLabel = this.computeTraineeGrade()
       this._activeFeedbackText =
@@ -702,7 +740,6 @@ export class FieldFixStateMachine {
       if (nextInc >= 0) {
         this._currentStepIndex = nextInc
         this._selectedHotspot = REPAIR_STEPS[nextInc].targetHotspot
-        this._tracedHotspots[this._selectedHotspot] = true
       }
       const nextStepObj = REPAIR_STEPS[this._currentStepIndex]
       this._activeFeedbackText =

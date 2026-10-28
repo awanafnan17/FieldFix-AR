@@ -28,12 +28,12 @@ When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Rel
    FieldFix AR enforces real industrial Lockout-Tagout (`LOTO`) safety ordering (`Step 1 -> Step 2 -> Step 3 -> Step 4`). If a trainee attempts an out-of-order repair (such as purging the `142 PSI` regulator `PR-204` or reseating the `118°C` relay `TR-309` before isolating `CV-101`), the **Sequential Safety Interlock** blocks execution, flashes a 3D red hazard halo with an audible alert (`FaultAlert.wav`), displays a corrective `SAFETY INTERLOCK [LOTO VIOLATION]` banner, and automatically redirects focus to the required prerequisite step (`CV-101`).
 
 4. **Pinch 3D Component Hotspots Directly on the Equipment to Focus & Execute Repairs** (or use the companion UIKit HUD buttons):
-   - A 3D bobbing pointer chevron (`ActiveStepPointerChevron`) hovers directly above the active trace or repair target 3D component (`CV-101`, `PR-204`, or `TR-309`).
+   - A 3D bobbing pointer chevron (`ActiveStepTargetChevron`) hovers directly above the active trace or repair target 3D component (`CV-101`, `PR-204`, or `TR-309`).
    - Pinching a focused 3D hotspot when it is the active repair target **directly executes and confirms that repair step on the 3D machine**:
-     - **Step 1 (`CV-101` Isolate & Simulated LOTO):** The asymmetric yellow-tipped **3D Valve Lever Handle** rotates `90°` clockwise (`0°` up to `-90°` right), a red **3D simulated Lockout-Tagout clasp (`LotoSafetyClasp`)** snaps onto the valve stem, and the 6 animated manifold **Coolant Flow Pulse Rings (`CoolantFlowRing_0..5`)** halt (`Simulated Flow: 0%`, `[1:LOTO OK]`).
+     - **Step 1 (`CV-101` Isolate & Simulated LOTO):** The asymmetric yellow-tipped **3D Valve Lever Handle** rotates `90°` clockwise (`0°` up to `-90°` right), a red **3D simulated Lockout-Tagout clasp (`LotoSafetyClasp`)** snaps onto the valve stem, and the 6 animated manifold **Coolant Flow Pulse Rings (`CoolantFlowPulseRing_0..5`)** halt (`Simulated Flow: 0%`, `[1:LOTO OK]`).
      - **Step 2 (`PR-204` Purge Pressure):** The 3D **Pressure Regulator Gauge Needle** sweeps from the red left danger zone (`142 PSI`) into the regulated green right zone (`38 PSI`, `82°C`, `[2:PURGE OK]`).
      - **Step 3 (`TR-309` Reseat Relay Core):** The overheated 3D **Thermal Relay Core** retracts its raised plunger into its containment collar, rotates its latch `45°`, and cools from pulsing crimson (`118°C`) to cyan/emerald (`46°C`, `[3:RESEAT OK]`).
-     - **Step 4 (`CV-101` Re-Pressurize & Verify Flow):** The simulated 3D LOTO clasp clears, the **Asymmetric Valve Lever** rotates open (`+90°` left), the 6 emerald-green **Coolant Flow Pulse Rings (`CoolantFlowRing_0..5`)** accelerate to `100%` simulated flow across the manifold pipe, all halos + overhead **Status Beacon** illuminate emerald green (`SYSTEM NOMINAL — 42°C | 45 PSI | 100% FLOW | 4/4 DONE`), and the **Trainee Competency Scorecard** awards a grade (`100% / A+ FLAWLESS LOTO`, `85% / B+ SAFETY REDIRECTED`, `70% / C LOTO REVIEW REQUIRED`, or `<=60% / D UNSAFE PROCEDURE`).
+     - **Step 4 (`CV-101` Re-Pressurize & Verify Flow):** The simulated 3D LOTO clasp clears, the **Asymmetric Valve Lever** rotates open (`+90°` left), the 6 emerald-green **Coolant Flow Pulse Rings (`CoolantFlowPulseRing_0..5`)** accelerate to `100%` simulated flow across the manifold pipe, all halos + overhead **Status Beacon** illuminate emerald green (`SYSTEM NOMINAL — 42°C | 45 PSI | 100% FLOW | 4/4 DONE`), and the **Trainee Competency Scorecard** awards a grade (`100% / A+ FLAWLESS LOTO`, `85% / B+ SAFETY REDIRECTED`, `70% / C LOTO REVIEW REQUIRED`, or `<=60% / D UNSAFE PROCEDURE`).
 
 5. **Toggle Before / After Spatial Comparison Mode (`COMPARE BEFORE/AFTER`), Navigate & Replay:**
    After completing all 4 steps, trainees can pinch `COMPARE BEFORE/AFTER` to dynamically animate the 3D machine, valve lever, gauge needle, relay core, flow rings, and telemetry between `FAULT (BEFORE)` (`118°C / 142 PSI / 18% Flow`) and `NOMINAL (AFTER)` (`42°C / 45 PSI / 100% Flow`) without losing completion state, step backward/forward (`< PREV STEP`, `NEXT STEP >`), or reset the simulation (`RESET UNIT`).
@@ -88,7 +88,8 @@ FieldFix-AR/
 │   │   ├── FieldFixResetAndReplayScenario.ts    # Scenario 3: FieldFixResetAndReplayScenario
 │   │   ├── FieldFixAdversarialSafetyAndXRayScenario.ts # Scenario 4: Adversarial LOTO Interlock, X-Ray & Comparison
 │   │   ├── FieldFixTraceTheFaultSignatureScenario.ts   # Scenario 5: Signature "TRACE THE FAULT" causal discovery & Auto-X-Ray
-│   │   └── LeafIndex.ts                  # @scenariosIndex registration for all 5 LEAF scenarios
+│   │   ├── FieldFixExhaustiveRedTeamScenario.ts        # Scenario 6: Exhaustive Red-Team & 120-Seed Invariant Fuzzer
+│   │   └── LeafIndex.ts                  # @scenariosIndex registration for all 6 LEAF scenarios
 │   ├── GeneratedSFX/                     # 44.1 kHz WAV cues synthesized via CLAD /build-sfx
 │   │   ├── ButtonClick.wav
 │   │   ├── ScanSweep.wav
@@ -140,12 +141,13 @@ FieldFix-AR/
 
 ### Running Automated LEAF Tests
 1. In Lens Studio, open the **LEAF Panel** (or invoke `run_leaf_scenario` via Lens Studio MCP).
-2. Run all 5 registered scenarios from `Assets/Tests/LeafIndex.ts`:
+2. Run all 6 registered scenarios from `Assets/Tests/LeafIndex.ts`:
    - **`FieldFixFullDiagnosticRepairScenario`**
    - **`FieldFixMidRepairShowcaseScenario`**
    - **`FieldFixResetAndReplayScenario`**
    - **`FieldFixAdversarialSafetyAndXRayScenario`**
    - **`FieldFixTraceTheFaultSignatureScenario`**
+   - **`FieldFixExhaustiveRedTeamScenario`**
 
 ---
 

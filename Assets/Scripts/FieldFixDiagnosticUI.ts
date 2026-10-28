@@ -325,6 +325,12 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         if (this.pendingSnapshot.phase === "READY_TO_SCAN") {
           this.onScanRequestedEvent.invoke()
         } else if (
+          this.pendingSnapshot.comparisonFaultPreview &&
+          this.pendingSnapshot.phase !== "COMPLETED"
+        ) {
+          // Comparison mode is read-only: pressing primary action exits comparison mode before executing any step
+          this.onToggleComparisonEvent.invoke()
+        } else if (
           this.pendingSnapshot.phase === "DIAGNOSING" &&
           !this.pendingSnapshot.faultTraceComplete &&
           this.pendingSnapshot.completedCount === 0 &&
@@ -724,13 +730,19 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       } else if (snapshot.phase === "COMPLETED") {
         this.stepHeaderText.text = `REPAIR COMPLETE: ${snapshot.traineeGrade} (${snapshot.trainingScorePct}%)`
         this.stepHeaderText.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
+      } else if (snapshot.comparisonFaultPreview) {
+        this.stepHeaderText.text = "COMPARE MODE: INITIAL FAULT SNAPSHOT (READ-ONLY)"
+        this.stepHeaderText.textFill.color = new vec4(1.0, 0.72, 0.28, 1.0)
       } else if (
         snapshot.phase === "DIAGNOSING" &&
         !snapshot.faultTraceComplete &&
         snapshot.completedCount === 0
       ) {
         if (!snapshot.tracedHotspots[snapshot.selectedHotspot]) {
-          this.stepHeaderText.text = "TRACE ORDER: INSPECT [PR-204] FIRST"
+          this.stepHeaderText.text =
+            snapshot.selectedHotspot === "regulator"
+              ? "TRACE ORDER: CONFIRM [TR-309] SYMPTOM FIRST"
+              : "TRACE ORDER: INSPECT [PR-204] FIRST"
           this.stepHeaderText.textFill.color = new vec4(1.0, 0.82, 0.32, 1.0)
         } else if (snapshot.nextTraceTarget === "regulator") {
           this.stepHeaderText.text = "TRACE [1/3]: INSPECT UPSTREAM REGULATOR"
@@ -759,6 +771,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         this.stepInstructionText.text = snapshot.comparisonFaultPreview
           ? "COMPARISON ACTIVE: Viewing initial fault telemetry (118C, 142 PSI, 18% Flow). Pinch COMPARE to restore nominal view."
           : snapshot.whatChangedSummary
+      } else if (snapshot.comparisonFaultPreview) {
+        this.stepInstructionText.text =
+          "COMPARISON ACTIVE (READ-ONLY): Viewing initial fault snapshot (118C, 142 PSI, 18% Flow). Pinch [COMPARE] to resume repair."
       } else if (
         snapshot.phase === "DIAGNOSING" &&
         !snapshot.faultTraceComplete &&
@@ -767,7 +782,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       ) {
         if (!snapshot.tracedHotspots[snapshot.selectedHotspot]) {
           this.stepInstructionText.text =
-            "Do not skip upstream components. Follow the 3D chevron to midstream [PR-204] before inspecting [CV-101]."
+            snapshot.selectedHotspot === "regulator"
+              ? "Confirm [TR-309] overheat symptom first, then pinch 3D [PR-204] to inspect its internal regulator state."
+              : "Do not skip upstream components. Follow the 3D chevron to midstream [PR-204] before inspecting [CV-101]."
         } else if (snapshot.nextTraceTarget === "regulator") {
           this.stepInstructionText.text =
             "Follow the 3D chevron upstream from TR-309 and pinch 3D [PR-204] to inspect its internal state."
@@ -844,6 +861,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       } else if (snapshot.phase === "COMPLETED") {
         this.btnPrimaryAction.label.text = `VERIFIED NOMINAL (${snapshot.trainingScorePct}% SCORE)`
         this.btnPrimaryAction.label.textFill.color = new vec4(0.32, 0.98, 0.58, 1.0)
+      } else if (snapshot.comparisonFaultPreview) {
+        this.btnPrimaryAction.label.text = "EXIT COMPARE TO RESUME REPAIR"
+        this.btnPrimaryAction.label.textFill.color = new vec4(1.0, 0.82, 0.36, 1.0)
       } else if (
         snapshot.phase === "DIAGNOSING" &&
         !snapshot.faultTraceComplete &&
@@ -884,7 +904,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     }
 
     if (this.btnToggleComparison) {
-      const compareUnlocked = snapshot.uiDisclosureMode === "active_repair" || snapshot.uiDisclosureMode === "completed_review"
+      const compareUnlocked = snapshot.completedCount > 0 || snapshot.phase === "COMPLETED"
       this.btnToggleComparison.label.text = snapshot.comparisonFaultPreview
         ? "[ COMPARE: FAULT ]"
         : "COMPARE BEFORE/AFTER"
@@ -972,7 +992,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         }
       } else {
         const isStep1Target =
-          snapshot.currentStep.targetHotspot === "valve" && !snapshot.isCurrentStepDone
+          !snapshot.comparisonFaultPreview &&
+          snapshot.currentStep.targetHotspot === "valve" &&
+          !snapshot.isCurrentStepDone
         const tag = isStep1Target ? "[PINCH: LOTO]" : "[CAVITATION]"
         this.calloutValveText.text = `CV-101: 18% FLOW ${tag}`
         this.calloutValveText.textFill.color =
@@ -1002,6 +1024,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         }
       } else {
         const isStep2Target =
+          !snapshot.comparisonFaultPreview &&
           snapshot.currentStep.targetHotspot === "regulator" &&
           snapshot.completedSteps[0] &&
           !snapshot.completedSteps[1]
@@ -1021,6 +1044,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         this.calloutRelayText.textFill.color = red
       } else {
         const isStep3Target =
+          !snapshot.comparisonFaultPreview &&
           snapshot.currentStep.targetHotspot === "relay" &&
           snapshot.completedSteps[1] &&
           !snapshot.completedSteps[2]
