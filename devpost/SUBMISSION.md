@@ -46,10 +46,10 @@ https://github.com/awanafnan17/FieldFix-AR
 ## 2. Ready-to-Paste Devpost Submission Fields
 
 ### Project Title
-**FieldFix AR — Hands-Free Spatial Maintenance Training Simulation**
+**FieldFix AR — "Don't Fix Where the Alarm Rings. Trace the Fault to Its Source."**
 
 ### Elevator Pitch (Tagline)
-An interactive hands-free maintenance training simulation for Snap SPECS with 3D X-Ray Cutaways, a Sequential LOTO Safety Interlock, Before/After Spatial Comparison, and direct 3D component manipulation.
+Don't fix where the alarm rings—trace the fault to its source. A hands-free Snap SPECS trainer for reverse-causal 3D fault tracing, localized X-Ray cutaways, and active LOTO safety interlocks.
 
 ### Public Code Repository URL (`Try it out` / GitHub Link)
 `https://github.com/awanafnan17/FieldFix-AR`
@@ -68,10 +68,15 @@ An interactive hands-free maintenance training simulation for Snap SPECS with 3D
 
 ## 3. Full Project Story (Devpost Description)
 
-### Inspiration: Why Maintenance Training Belongs in Spatial AR
-When learning to service industrial valves, pressure regulators, and thermal relays, trainees and technicians must coordinate physical hand actions with strict safety interlocks. Studying a flat paper manual or holding a tablet forces trainees to look away from the equipment, occupies their hands, and makes it impossible to visualize internal valve seals, diaphragm compression, or stator coil overheating inside sealed housings.
+> **"Don't fix where the alarm rings. Trace the fault to its source."**
 
-We built **FieldFix AR** for **Snap SPECS (`SPECS 27`)** as an **interactive, hands-free industrial maintenance training simulation**. Instead of floating a flat 2D webpage in front of the user's face, FieldFix AR places an articulated 3D equipment assembly and a companion world-anchored instruction panel side-by-side at workbench depth (`z = -110 cm`). Trainees can look freely around the equipment, **explode internal 3D sub-assemblies in X-Ray Cutaway mode**, experience **real-time Lockout-Tagout (`LOTO`) safety interlock enforcement**, and **pinch directly on the 3D machine components** to execute repairs.
+### Inspiration: Why Ordinary Repair Checklists Are Insufficient
+Industrial maintenance studies show that over 80% of conventional AR and tablet repair guides act as passive "turn-by-turn GPS"—pointing an arrow at Part A, then Part B. While trainees follow the arrows, they suffer from the **guidance over-reliance trap**: they execute steps mechanically without building a causal mental model of *why* the machine failed, and they routinely fix the downstream component where the alarm rings (`TR-309 Thermal Relay`) while leaving the upstream root cause (`CV-101 Intake Valve`) untouched. Worse, holding a tablet or paper manual occupies the technician's hands, splits visual attention away from pressurized machinery, and cannot show what is happening *inside* sealed housings.
+
+**Who FieldFix AR Is Designed to Train:**
+FieldFix AR is built for **industrial maintenance trainees, cryo-pump/HVAC apprentices, and field service technicians** learning root-cause fluid/thermal troubleshooting and OSHA Lockout-Tagout (`LOTO`) safety compliance before working on live energized equipment.
+
+We built **FieldFix AR** for **Snap SPECS (`SPECS 27`)** as an **interactive, hands-free spatial fault-tracing and LOTO safety trainer**. Instead of floating a flat 2D checklist in front of the user's face, FieldFix AR anchors a 29-object articulated 3D equipment digital twin on the left (`x = -12.5 cm`) and a companion world-space instruction panel on the right (`x = +11.5 cm`) at workbench depth (`z = -110 cm`). Trainees keep both hands free, follow physical fluid/pressure cues upstream in 3D space, **explode internal sub-assemblies in localized 3D Auto-X-Ray**, experience **consequence-driven LOTO safety interlocks**, and **pinch directly on 3D components** to restore nominal operation.
 
 ---
 
@@ -105,7 +110,10 @@ We built **FieldFix AR** for **Snap SPECS (`SPECS 27`)** as an **interactive, ha
 5. **Before / After Spatial Comparison Mode (`COMPARE BEFORE/AFTER`) & Repeatable Reset:**
    - Once all 4 steps are completed, trainees can pinch **`COMPARE BEFORE/AFTER`** to dynamically animate the 3D machine, valve lever, gauge needle, relay core, flow rings, and telemetry between `FAULT (BEFORE)` (`118°C / 142 PSI / 18% Flow`) and `NOMINAL (AFTER)` (`42°C / 45 PSI / 100% Flow`), step backward/forward (`< PREV STEP`, `NEXT STEP >`), or pinch **`RESET UNIT`** to replay the simulation.
 
-> **Simulation Scope Note:** FieldFix AR is an interactive training simulation. All temperature, pressure, and flow telemetry values are simulated in software, and the simulated Lockout-Tagout (`LOTO`) safety interlock is designed for procedural training rather than physical hazard isolation on live industrial equipment.
+> **Honest Limitations, Simulation Scope & Hardware Testing Disclosure ("Logic Proven" vs. "Feel Unproven"):**
+> - **What Is Simulated:** FieldFix AR is an educational and procedural maintenance training simulation. The 3D Cryo-Coolant Pump (`Unit #04`), temperature (`116°C–118°C` $\rightarrow$ `42°C`), pressure (`140–142 PSI` $\rightarrow$ `45 PSI`), coolant flow (`18%` $\rightarrow$ `0%` $\rightarrow$ `100%`), and Lockout-Tagout (`LOTO`) safety interlocks are simulated in software by a deterministic state engine (`FieldFixStateStore`) rather than connected to live industrial SCADA sensors or physical valves.
+> - **What Was Tested ("Logic Proven"):** All state transitions, 3D SIK hand-pinch interactions, progressive-disclosure masks, Auto-X-Ray cutaways, LOTO safety redirects, and `85% B+` / `100% A+` competency scorecards are **logic proven** in the **Lens Studio 5.24.1 (`SPECS 27`) Interactive Preview** using `PreviewInteractTool`, `QueryRuntimeSceneTool`, and **`5/5` passing `Leaf.lspkg` v2.0.2 integration scenarios**.
+> - **What Was Not Tested on Physical Hardware ("Feel Unproven"):** Because physical SPECS glasses were not used during development, optical waveguide brightness in outdoor/factory glare, long-session physical head comfort, real-world CAD Model Target registration onto physical pipes, and human cohort retention studies (`devpost/HUMAN_USABILITY_TEST_PROTOCOL.md`) remain **feel unproven** and represent the next stage of validation.
 
 ---
 

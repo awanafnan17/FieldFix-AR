@@ -382,6 +382,7 @@ export class FieldFixStateMachine {
 
   public selectHotspot(hotspotId: HotspotId): FieldFixUISnapshot {
     const wasInStandby = this._phase === "READY_TO_SCAN" || this._phase === "SCANNING"
+    const hadTracedRelayBefore = this._tracedHotspots.relay
     this._selectedHotspot = hotspotId
     this._comparisonFaultPreview = false
     this._interlockFlashHotspot = null
@@ -399,13 +400,13 @@ export class FieldFixStateMachine {
     if (hotspotId === "relay") {
       this._tracedHotspots.relay = true
     } else if (hotspotId === "regulator") {
-      if (this._tracedHotspots.relay) {
+      if (hadTracedRelayBefore) {
         this._tracedHotspots.regulator = true
       } else {
         skippedUpstreamOrder = true
       }
     } else if (hotspotId === "valve") {
-      if (this._tracedHotspots.relay && this._tracedHotspots.regulator) {
+      if (hadTracedRelayBefore && this._tracedHotspots.regulator) {
         this._tracedHotspots.valve = true
       } else {
         skippedUpstreamOrder = true

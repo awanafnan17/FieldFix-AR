@@ -25,11 +25,18 @@ export class FieldFixResetAndReplayScenario extends Scenario {
       "0 / 4 DONE"
     )
 
-    // Select a hotspot pill button and confirm immediate transition to DIAGNOSING
+    // Select a hotspot pill button from standby: enters DIAGNOSING at Trace 1/3 without skipping ahead
     await interactor.triggerNamedInteractable("BtnHotspotValve")
     const valveSnap = interactor.getSnapshot()
     expect(valveSnap.phase, "Selecting hotspot pill from standby enters DIAGNOSING").toBe("DIAGNOSING")
     expect(valveSnap.selectedHotspot, "Selected hotspot should be valve").toBe("valve")
+    expect(valveSnap.faultTraceCount, "Standby shortcut starts at Trace 1/3 without skipping PR-204").toBe(1)
+
+    // Subsequent pinch on PR-204 advances to Trace 2/3 and auto-enables X-Ray cutaway
+    await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
+    const regSnap = interactor.getSnapshot()
+    expect(regSnap.faultTraceCount, "Inspecting PR-204 after standby entry advances to Trace 2/3").toBe(2)
+    expect(regSnap.xrayMode, "Inspecting PR-204 at Trace 2/3 enables Auto-X-Ray").toBe(true)
 
     // Reset back to clean state
     await interactor.triggerNamedInteractable("BtnResetUnit")

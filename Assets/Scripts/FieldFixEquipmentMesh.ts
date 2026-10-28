@@ -405,6 +405,10 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private currentRelayRotationDeg: number = 0
   private targetRelayRotationDeg: number = 0
 
+  private isRegulatorBlockedRevealed: boolean = false
+  private mechanicalTransformsDirty: boolean = true
+  private flowRingsParkedDirty: boolean = true
+
   private elapsedTime: number = 0
   private scanTimer: number = 0
   private pinchFlashTimers: Record<HotspotId, number> = {
@@ -919,6 +923,9 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       snapshot.completedCount > 0 ||
       snapshot.comparisonFaultPreview
     const isRegulatorBlocked = regulatorBottleneckRevealed && !this.completedSteps[1]
+    this.isRegulatorBlockedRevealed = isRegulatorBlocked
+    this.mechanicalTransformsDirty = true
+    this.flowRingsParkedDirty = true
     if (this.faultBottleneckVisual) {
       const targetMesh = isRegulatorBlocked ? this.bottleneckMeshBlocked : this.bottleneckMeshCleared
       if (targetMesh) {
@@ -1085,7 +1092,12 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     const anyXrayActive =
       this.xrayMode || this.currentPhase === "SCANNING" || this.focusedXrayHotspot !== null
     const targetXray = anyXrayActive ? 1.0 : 0.0
-    this.currentXrayBlend += (targetXray - this.currentXrayBlend) * lerpFactor
+    const xrayMoving = Math.abs(targetXray - this.currentXrayBlend) > 0.0005
+    if (xrayMoving) {
+      this.currentXrayBlend += (targetXray - this.currentXrayBlend) * lerpFactor
+    } else {
+      this.currentXrayBlend = targetXray
+    }
 
     const valveXrayFactor =
       this.currentPhase === "SCANNING" || this.selectedHotspot === "valve"
@@ -1106,9 +1118,14 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
           ? this.currentXrayBlend * 0.36
           : 0.0
 
-    // 1. Animate Valve Handwheel rotation + X-Ray axial Z-explosion
-    this.currentValveAngleDeg += (this.targetValveAngleDeg - this.currentValveAngleDeg) * lerpFactor
-    if (this.valveWheelPivot) {
+    // 1. Animate Valve Handwheel rotation + X-Ray axial Z-explosion (dirty-gated when settled)
+    const valveMoving = Math.abs(this.targetValveAngleDeg - this.currentValveAngleDeg) > 0.005
+    if (valveMoving) {
+      this.currentValveAngleDeg += (this.targetValveAngleDeg - this.currentValveAngleDeg) * lerpFactor
+    } else {
+      this.currentValveAngleDeg = this.targetValveAngleDeg
+    }
+    if (this.valveWheelPivot && (this.mechanicalTransformsDirty || valveMoving || xrayMoving)) {
       this.valveWheelPivot
         .getTransform()
         .setLocalPosition(new vec3(-0.85 * valveXrayFactor, -0.65 * valveXrayFactor, 0.5 + valveXrayFactor * 1.65))
@@ -1125,10 +1142,16 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
         .setLocalRotation(quat.fromEulerAngles(0.35, this.elapsedTime * 1.8, 0))
     }
 
-    // 2. Animate Pressure Gauge Needle + X-Ray explosion
-    const jitter = this.completedSteps[1] ? 0 : Math.sin(this.elapsedTime * 14.0) * 3.0
-    this.currentGaugeAngleDeg += (this.targetGaugeAngleDeg - this.currentGaugeAngleDeg) * lerpFactor
-    if (this.gaugeNeedlePivot) {
+    // 2. Animate Pressure Gauge Needle + X-Ray explosion (dirty-gated when uninspected or purged)
+    const jitter = this.isRegulatorBlockedRevealed ? Math.sin(this.elapsedTime * 14.0) * 3.0 : 0
+    const gaugeMoving =
+      Math.abs(this.targetGaugeAngleDeg - this.currentGaugeAngleDeg) > 0.005 || this.isRegulatorBlockedRevealed
+    if (Math.abs(this.targetGaugeAngleDeg - this.currentGaugeAngleDeg) > 0.005) {
+      this.currentGaugeAngleDeg += (this.targetGaugeAngleDeg - this.currentGaugeAngleDeg) * lerpFactor
+    } else {
+      this.currentGaugeAngleDeg = this.targetGaugeAngleDeg
+    }
+    if (this.gaugeNeedlePivot && (this.mechanicalTransformsDirty || gaugeMoving || xrayMoving)) {
       this.gaugeNeedlePivot
         .getTransform()
         .setLocalPosition(new vec3(0, -0.2, 0.42 + regXrayFactor * 1.35))
@@ -1145,10 +1168,21 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
         .setLocalRotation(quat.fromEulerAngles(0.25, -this.elapsedTime * 1.6, 0))
     }
 
-    // 3. Animate Thermal Relay Core lift & latch rotation + X-Ray explosion
-    this.currentRelayLiftCm += (this.targetRelayLiftCm - this.currentRelayLiftCm) * lerpFactor
-    this.currentRelayRotationDeg += (this.targetRelayRotationDeg - this.currentRelayRotationDeg) * lerpFactor
-    if (this.relayCorePivot) {
+    // 3. Animate Thermal Relay Core lift & latch rotation + X-Ray explosion (dirty-gated once cooled & settled)
+    const relayLiftMoving = Math.abs(this.targetRelayLiftCm - this.currentRelayLiftCm) > 0.001
+    const relayRotMoving = Math.abs(this.targetRelayRotationDeg - this.currentRelayRotationDeg) > 0.005
+    if (relayLiftMoving) {
+      this.currentRelayLiftCm += (this.targetRelayLiftCm - this.currentRelayLiftCm) * lerpFactor
+    } else {
+      this.currentRelayLiftCm = this.targetRelayLiftCm
+    }
+    if (relayRotMoving) {
+      this.currentRelayRotationDeg += (this.targetRelayRotationDeg - this.currentRelayRotationDeg) * lerpFactor
+    } else {
+      this.currentRelayRotationDeg = this.targetRelayRotationDeg
+    }
+    const relayActive = !this.completedSteps[2] || relayLiftMoving || relayRotMoving
+    if (this.relayCorePivot && (this.mechanicalTransformsDirty || relayActive || xrayMoving)) {
       const thermalBob = !this.completedSteps[2] ? Math.sin(this.elapsedTime * 6.0) * 0.12 : 0
       this.relayCorePivot
         .getTransform()
@@ -1191,14 +1225,16 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     if (this.regulatorPurgePlumeObj) {
       if (this.purgePlumeTimer > 0) {
         this.purgePlumeTimer = Math.max(0, this.purgePlumeTimer - clampedDt)
-        this.regulatorPurgePlumeObj.enabled = true
+        if (!this.regulatorPurgePlumeObj.enabled) {
+          this.regulatorPurgePlumeObj.enabled = true
+        }
         const prog = 1.0 - this.purgePlumeTimer / 1.8
         this.regulatorPurgePlumeObj
           .getTransform()
           .setLocalPosition(new vec3(0, 2.0 + prog * 2.6, 0))
         const s = 0.8 + prog * 0.75
         this.regulatorPurgePlumeObj.getTransform().setLocalScale(new vec3(s, 1.0 + prog * 0.5, s))
-      } else {
+      } else if (this.regulatorPurgePlumeObj.enabled) {
         this.regulatorPurgePlumeObj.enabled = false
       }
     }
@@ -1228,10 +1264,12 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       const pulse = 1.0 + Math.sin(this.elapsedTime * 4.5) * 0.08
       this.statusBeaconPivot.getTransform().setLocalScale(new vec3(pulse, pulse, pulse))
     }
+
+    this.mechanicalTransformsDirty = false
   }
 
   private animateCausalFlowSystem(clampedDt: number): void {
-    // A. Rotate Sight-Glass Turbine Impeller proportional to simulated flow
+    // A. Rotate Sight-Glass Turbine Impeller proportional to simulated flow (dirty-gated when LOTO halted)
     if (this.manifoldImpellerObj) {
       const impellerSpeed =
         this.flowBottleneckStage === "nominal_100pct"
@@ -1239,18 +1277,19 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
           : this.flowBottleneckStage === "choked_142psi"
             ? 2.4 + Math.sin(this.elapsedTime * 12.0) * 1.4
             : 0.0
-      this.impellerAngleRad = (this.impellerAngleRad + clampedDt * impellerSpeed) % (Math.PI * 2)
-      this.manifoldImpellerObj
-        .getTransform()
-        .setLocalRotation(quat.fromEulerAngles(0, 0, this.impellerAngleRad))
+      if (impellerSpeed > 0 || this.mechanicalTransformsDirty) {
+        this.impellerAngleRad = (this.impellerAngleRad + clampedDt * impellerSpeed) % (Math.PI * 2)
+        this.manifoldImpellerObj
+          .getTransform()
+          .setLocalRotation(quat.fromEulerAngles(0, 0, this.impellerAngleRad))
+      }
     }
 
-    // B. Pulse Vapor-Lock Bottleneck Barrier at x=-0.65
-    if (this.faultBottleneckRingObj) {
-      const isBlocked =
-        this.flowBottleneckStage === "choked_142psi" ||
-        this.flowBottleneckStage === "isolated_trapped_psi"
-      const bScale = isBlocked ? 1.06 + Math.sin(this.elapsedTime * 11.0) * 0.12 : 0.88
+    // B. Pulse Vapor-Lock Bottleneck Barrier at x=-0.65 only once PR-204 bottleneck is revealed
+    if (this.faultBottleneckRingObj && (this.isRegulatorBlockedRevealed || this.mechanicalTransformsDirty)) {
+      const bScale = this.isRegulatorBlockedRevealed
+        ? 1.06 + Math.sin(this.elapsedTime * 11.0) * 0.12
+        : 0.88
       this.faultBottleneckRingObj.getTransform().setLocalScale(new vec3(1.0, bScale, bScale))
     }
 
@@ -1300,8 +1339,8 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
         ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
         ring.getTransform().setLocalScale(new vec3(shrinkScale, shrinkScale, shrinkScale))
       }
-    } else {
-      // LOTO Isolated (0% intake flow during Steps 1..3): upstream intake halted; downstream drained
+    } else if (this.flowRingsParkedDirty) {
+      // LOTO Isolated (0% intake flow during Steps 1..3): write parked positions once instead of every frame
       for (let i = 0; i < this.coolantFlowRings.length; i++) {
         const ring = this.coolantFlowRings[i]
         const xPos = i < 3 ? -5.6 + i * 1.8 : 1.4 + (i - 3) * 1.6
@@ -1309,6 +1348,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
         ring.getTransform().setLocalPosition(new vec3(xPos, 1.2, 0.4))
         ring.getTransform().setLocalScale(new vec3(parkedScale, parkedScale, parkedScale))
       }
+      this.flowRingsParkedDirty = false
     }
   }
 

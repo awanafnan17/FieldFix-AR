@@ -6,7 +6,9 @@
 
 ## Overview
 
-**FieldFix AR** is an interactive, hands-free industrial maintenance **training simulation** designed for **Snap SPECS (`SPECS 27`)**.
+> **"Don't fix where the alarm rings. Trace the fault to its source."**
+
+**FieldFix AR** is an interactive, hands-free industrial maintenance and reverse-causal fault-tracing **training simulation** designed for **Snap SPECS (`SPECS 27`)**. It trains industrial maintenance apprentices, HVAC/cryo-pump technicians, and field service engineers to diagnose upstream root causes and follow strict Lockout-Tagout (`LOTO`) safety ordering instead of blindly replacing the downstream part where an alarm rings.
 
 When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Relay Unit (`Unit #04`)**, FieldFix AR anchors a multi-part, articulated 3D equipment assembly on the left and a companion `SpectaclesUIKit` diagnostic and repair checklist on the right at workbench depth (`z = -110 cm`). Using far-field hand-pinch gestures (`SpectaclesInteractionKit`), the user can:
 
@@ -59,17 +61,19 @@ FieldFix-AR/
 ├── LICENSE                               # MIT License (with Third-Party Snap Package notices)
 ├── README.md                             # Project documentation & setup instructions
 ├── devpost/
-│   ├── FieldFix-AR-Demo-V5-TraceTheFault.mp4 # 120.0s V5 "TRACE THE FAULT" signature candidate video
-│   ├── FieldFix-AR-Demo.mp4              # Preserved V4 approved 120.0s demo video
-│   ├── SIGNATURE_EXPERIENCE_PROPOSAL.md  # Phase 1 "TRACE THE FAULT" spatial architecture & design spec
+│   ├── FieldFix-AR-Demo-V5-TraceTheFault.mp4 # 111.53s (1:51.5) V5 "TRACE THE FAULT" verified demo video
+│   ├── FieldFix-AR-Demo.mp4              # Preserved V4 approved demo video
+│   ├── JUDGE_RESEARCH.md                 # Epistemically labeled [1]-[4] judge & competition analysis
+│   ├── COMPETITIVE_LANDSCAPE.md          # SPECS ecosystem, academic HCI & enterprise AR benchmark
+│   ├── RED_TEAM_AND_OPTIMIZATION_REPORT.md # 4-criterion red-team audit & pre/post optimization profile
+│   ├── HUMAN_USABILITY_TEST_PROTOCOL.md  # 5-minute first-time human reviewer usability protocol
+│   ├── SIGNATURE_EXPERIENCE_PROPOSAL.md  # "TRACE THE FAULT" spatial architecture & design spec
 │   ├── build_demo_video.py               # Reproducible ffmpeg + voiceover video assembly script
 │   ├── design-brief.md                   # Official plan-lens AR design brief (status: approved)
-│   ├── SUBMISSION.md                     # Ready-to-paste Devpost & YouTube submission copy
+│   ├── SUBMISSION.md                     # Ready-to-paste Devpost & video submission copy
 │   ├── COMPLIANCE_CHECKLIST.md           # Competition rule, accuracy & security audit checklist
 │   ├── VERIFICATION_REPORT.md            # Real SIK PreviewInteractTool, 5/5 LEAF & V4 vs V5 critique report
-│   ├── FIRST_PLACE_CAMPAIGN_PLAN.md      # Competitive engineering campaign plan & milestones
-│   ├── QUALITY_CAMPAIGN_LOG.md           # Timestamped engineering, QA & verification log
-│   └── screenshots/                      # High-res 1392x1910 & full-editor PNG captures
+│   └── screenshots/                      # Synchronized V5 runtime preview & editor PNG captures
 ├── Assets/
 │   ├── Scripts/
 │   │   ├── FieldFixState.ts              # State machine, Trace-The-Fault, LOTO interlock, X-Ray, Comparison & Scorecard
@@ -99,6 +103,19 @@ FieldFix-AR/
     ├── AiPreviewAgentInspect.lspkg       # Live runtime scene GraphQL inspection bridge
     └── AiPreviewAgentInteract.lspkg      # Live SIK puppet hand interaction bridge
 ```
+
+---
+
+## Visual Progression & Key Screenshots (`devpost/screenshots/`)
+
+| Stage | Screenshot File | What It Shows in the Live SPECS 27 Runtime |
+| :--- | :--- | :--- |
+| **1. Standby (`0/3`)** | [`devpost/screenshots/01_standby_ready_to_scan.png`](./devpost/screenshots/01_standby_ready_to_scan.png) | Only the visible overheat symptom at `TR-309` (`116°C [OVERHEAT SYMPTOM]`) is disclosed; upstream `PR-204` and `CV-101` read `[UNINSPECTED]` so nothing is spoiled prior to investigation. |
+| **2. Trace `1/3` (`TR-309`)** | [`devpost/screenshots/02_diagnosing_fault_localized.png`](./devpost/screenshots/02_diagnosing_fault_localized.png) | After the dual-beam laser scan, `TR-309` (`118°C`) is localized (`1/3 INSPECTED`) and the 3D chevron + primary CTA (`TRACE UPSTREAM: INSPECT [PR-204]`) guide the trainee upstream. |
+| **3. Trace `2/3` (`PR-204` Auto-X-Ray)** | [`devpost/screenshots/03_trace_fault_upstream_pr204.png`](./devpost/screenshots/03_trace_fault_upstream_pr204.png) | Inspecting `PR-204` lifts its outer housing into **localized 3D Auto-X-Ray** (`RegulatorInternalDiaphragm`), reveals the `142 PSI` vapor-lock bottleneck, and updates the primary CTA to `TRACE UPSTREAM: INSPECT [CV-101]`. |
+| **4. LOTO Safety Interlock** | [`devpost/screenshots/04_loto_safety_interlock_blocked.png`](./devpost/screenshots/04_loto_safety_interlock_blocked.png) | Attempting an out-of-order repair before isolating `CV-101` flashes the 3D crimson hazard halo, explains the physical blowdown/arc hazard, logs LOTO Violation #1 (`-15%`), and redirects focus to `Step 1/4: CV-101`. |
+| **5. Nominal Completion (`4/4`)** | [`devpost/screenshots/06_completed_nominal_scorecard.png`](./devpost/screenshots/06_completed_nominal_scorecard.png) | All 4 steps completed (`42°C | 45 PSI | 100% FLOW`), emerald flow rings active across the manifold, and the **Trainee Competency Scorecard** displayed (`85% B+` vs. `100% A+`). |
+| **6. Full Lens Studio 5.24.1 Editor** | [`devpost/screenshots/05_full_editor_with_preview.png`](./devpost/screenshots/05_full_editor_with_preview.png) | Complete Lens Studio `5.24.1` workspace showing the 3D Scene Editor, Hierarchy, TypeScript scripts, LEAF Runner, and live `SPECS 27` Preview. |
 
 ---
 
