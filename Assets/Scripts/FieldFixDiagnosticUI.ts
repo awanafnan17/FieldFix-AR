@@ -93,6 +93,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.frame = frame
 
     frame.onInitialized.add(() => {
+      if (this.uiReady) return
       frame.innerSize = new vec2(28, 43.2)
       frame.padding = new vec2(0.8, 0.8)
       frame.syncScaleBaseline()
@@ -438,8 +439,8 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.calloutValveText = this.createTextLabel(
       calloutsRoot,
       "CalloutValveBadge",
-      new vec3(-8.4, -5.9, 1.2),
-      new vec2(18.2, 2.3),
+      new vec3(-9.4, -5.9, 1.2),
+      new vec2(16.8, 2.3),
       "CV-101: [UNINSPECTED]",
       31,
       new vec4(1.0, 0.80, 0.28, 1.0),
@@ -450,8 +451,8 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     this.calloutRelayText = this.createTextLabel(
       calloutsRoot,
       "CalloutRelayBadge",
-      new vec3(8.4, -5.9, 1.2),
-      new vec2(18.2, 2.3),
+      new vec3(9.4, -5.9, 1.25),
+      new vec2(16.8, 2.3),
       "TR-309: 116C [OVERHEAT SYMPTOM]",
       31,
       new vec4(1.0, 0.40, 0.40, 1.0),
@@ -650,11 +651,21 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         this.componentTitleText.text = `[${comp.subsystemCode}] UPSTREAM COMPONENT (UNINSPECTED)`
         this.componentTitleText.textFill.color = new vec4(1.0, 0.82, 0.32, 1.0)
       } else {
-        const statusText = compRepaired
-          ? comp.nominalStatusLabel
-          : valveLockedOutMidRepair
-            ? "LOTO ISOLATED: INTAKE LOCKED (0% FLOW)"
-            : comp.faultStatusLabel
+        let statusText = comp.faultStatusLabel
+        if (compRepaired) {
+          statusText =
+            comp.id === "regulator"
+              ? `NOMINAL: REGULATOR AT ${snapshot.systemPressurePsi} PSI`
+              : comp.id === "relay"
+                ? `NOMINAL: RELAY CORE AT ${snapshot.systemTempC}C`
+                : comp.nominalStatusLabel
+        } else if (valveLockedOutMidRepair) {
+          statusText = "LOTO ISOLATED: INTAKE LOCKED (0% FLOW)"
+        } else if (comp.id === "regulator") {
+          statusText = `FAULT: VAPOR LOCK (${snapshot.systemPressurePsi} PSI / 65 PSI MAX)`
+        } else if (comp.id === "relay") {
+          statusText = `CRITICAL: CORE OVERHEAT (${snapshot.systemTempC}C / 75C MAX)`
+        }
         const xrayTag =
           snapshot.xrayMode || snapshot.focusedXrayHotspot === comp.id ? " [X-RAY]" : ""
         this.componentTitleText.text = `[${comp.subsystemCode}] ${statusText}${xrayTag}`
@@ -677,7 +688,9 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
         this.rootCauseText.textFill.color = new vec4(0.90, 0.96, 1.0, 1.0)
       } else if (compUninspected) {
         this.rootCauseText.text =
-          `Upstream trace incomplete: Inspect midstream [PR-204] upstream from [TR-309] before diagnosing [${comp.subsystemCode}].`
+          comp.id === "regulator"
+            ? "Upstream trace incomplete: Confirm [TR-309] overheat symptom first, then pinch [PR-204] to inspect."
+            : `Upstream trace incomplete: Inspect midstream [PR-204] upstream from [TR-309] before diagnosing [${comp.subsystemCode}].`
         this.rootCauseText.textFill.color = new vec4(1.0, 0.86, 0.36, 1.0)
       } else if (compRepaired) {
         this.rootCauseText.text = snapshot.xrayMode
@@ -850,7 +863,19 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
       }
     }
 
-    // 8. Row 9 Utility Button Labels (X-Ray & Before/After Comparison)
+    // 8. Row 8 & Row 9 Utility Button Labels (Progressive Disclosure via uiDisclosureMode)
+    const navUnlocked = snapshot.phase !== "READY_TO_SCAN" && snapshot.phase !== "SCANNING" && snapshot.faultTraceComplete
+    if (this.btnPrev) {
+      this.btnPrev.label.textFill.color = navUnlocked
+        ? new vec4(0.92, 0.96, 1.0, 1.0)
+        : new vec4(0.55, 0.62, 0.72, 0.78)
+    }
+    if (this.btnNext) {
+      this.btnNext.label.textFill.color = navUnlocked
+        ? new vec4(0.92, 0.96, 1.0, 1.0)
+        : new vec4(0.55, 0.62, 0.72, 0.78)
+    }
+
     if (this.btnToggleXray) {
       this.btnToggleXray.label.text = snapshot.xrayMode ? "[ X-RAY: ON ]" : "X-RAY CUTAWAY"
       this.btnToggleXray.label.textFill.color = snapshot.xrayMode
@@ -859,12 +884,15 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     }
 
     if (this.btnToggleComparison) {
+      const compareUnlocked = snapshot.uiDisclosureMode === "active_repair" || snapshot.uiDisclosureMode === "completed_review"
       this.btnToggleComparison.label.text = snapshot.comparisonFaultPreview
         ? "[ COMPARE: FAULT ]"
         : "COMPARE BEFORE/AFTER"
       this.btnToggleComparison.label.textFill.color = snapshot.comparisonFaultPreview
         ? new vec4(1.0, 0.72, 0.28, 1.0)
-        : new vec4(0.90, 0.95, 1.0, 1.0)
+        : compareUnlocked
+          ? new vec4(0.90, 0.95, 1.0, 1.0)
+          : new vec4(0.55, 0.62, 0.72, 0.78)
     }
 
     // 9. Update Floating 3D Spatial Equipment Callouts
@@ -977,7 +1005,7 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
           snapshot.currentStep.targetHotspot === "regulator" &&
           snapshot.completedSteps[0] &&
           !snapshot.completedSteps[1]
-        const tag = isStep2Target ? "[PINCH: PURGE]" : "[142 PSI BLOCK]"
+        const tag = isStep2Target ? "[PINCH: PURGE]" : `[${snapshot.systemPressurePsi} PSI BLOCK]`
         this.calloutRegulatorText.text = `PR-204: ${snapshot.systemPressurePsi} PSI ${tag}`
         this.calloutRegulatorText.textFill.color =
           snapshot.selectedHotspot === "regulator" ? cyan : amber

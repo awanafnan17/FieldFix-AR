@@ -6,6 +6,7 @@
 import { scenariosIndex } from "Leaf.lspkg/Scenarios/decorator/ScenarioIndexDecorator"
 import { ScenarioMetadata } from "Leaf.lspkg/Scenarios/scenario/ScenarioMetadata"
 import { FieldFixAdversarialSafetyAndXRayScenario } from "./FieldFixAdversarialSafetyAndXRayScenario"
+import { FieldFixExhaustiveRedTeamScenario } from "./FieldFixExhaustiveRedTeamScenario"
 import { FieldFixFullDiagnosticRepairScenario } from "./FieldFixLeafScenario"
 import { FieldFixMidRepairShowcaseScenario } from "./FieldFixMidRepairShowcaseScenario"
 import { FieldFixResetAndReplayScenario } from "./FieldFixResetAndReplayScenario"
@@ -34,6 +35,10 @@ export class LeafIndex extends BaseScriptComponent {
     {
       id: "FieldFixTraceTheFaultSignatureScenario",
       typename: FieldFixTraceTheFaultSignatureScenario.getTypeName()
+    },
+    {
+      id: "FieldFixExhaustiveRedTeamScenario",
+      typename: FieldFixExhaustiveRedTeamScenario.getTypeName()
     }
   ]
 }

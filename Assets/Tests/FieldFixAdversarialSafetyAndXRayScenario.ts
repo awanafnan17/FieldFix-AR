@@ -36,7 +36,7 @@ export class FieldFixAdversarialSafetyAndXRayScenario extends Scenario {
     expect(afterScan.phase, "Phase after scan completes should be DIAGNOSING").toBe("DIAGNOSING")
     expect(afterScan.completedCount, "No steps completed yet").toBe(0)
 
-    // 2. Verify 3D Spatial X-Ray / Exploded Inspection Mode
+    // 2. Verify 3D Spatial X-Ray / Exploded Inspection Mode (Progressive Disclosure -> Full Trace)
     await interactor.triggerNamedInteractable("BtnToggleXray")
     const xraySnap = interactor.getSnapshot()
     expect(xraySnap.xrayMode, "X-Ray mode should be active").toBe(true)
@@ -44,9 +44,26 @@ export class FieldFixAdversarialSafetyAndXRayScenario extends Scenario {
     const valveInt = findSceneObjectByName("ValveInternalCryoSeal")
     const regInt = findSceneObjectByName("RegulatorInternalDiaphragm")
     const relayInt = findSceneObjectByName("RelayInternalStatorCoil")
-    expect(valveInt !== null && valveInt.enabled, "ValveInternalCryoSeal should be enabled in X-Ray mode").toBe(true)
-    expect(regInt !== null && regInt.enabled, "RegulatorInternalDiaphragm should be enabled in X-Ray mode").toBe(true)
-    expect(relayInt !== null && relayInt.enabled, "RelayInternalStatorCoil should be enabled in X-Ray mode").toBe(true)
+    expect(
+      relayInt !== null && relayInt.enabled,
+      "At Trace 1/3, traced RelayInternalStatorCoil should be enabled in X-Ray mode"
+    ).toBe(true)
+    expect(
+      regInt !== null && !regInt.enabled,
+      "At Trace 1/3, uninspected RegulatorInternalDiaphragm remains concealed"
+    ).toBe(true)
+    expect(
+      valveInt !== null && !valveInt.enabled,
+      "At Trace 1/3, uninspected ValveInternalCryoSeal remains concealed"
+    ).toBe(true)
+
+    // Trace upstream through PR-204 (Trace 2/3) and CV-101 (Trace 3/3) so all 3 internals are inspected
+    await interactor.triggerNamedInteractable("Hotspot_PressureRegulator")
+    await interactor.triggerNamedInteractable("Hotspot_CoolantValve")
+    expect(interactor.getSnapshot().faultTraceComplete, "Upstream fault trace complete (3/3)").toBe(true)
+    expect(valveInt !== null && valveInt.enabled, "ValveInternalCryoSeal should be enabled once traced").toBe(true)
+    expect(regInt !== null && regInt.enabled, "RegulatorInternalDiaphragm should be enabled once traced").toBe(true)
+    expect(relayInt !== null && relayInt.enabled, "RelayInternalStatorCoil should be enabled once traced").toBe(true)
 
     // 3. Adversarial Out-of-Order LOTO Safety Interlock Check:
     // Select 3D Thermal Relay Core (jumps to Step 3/4, index 2), then pinch again to attempt execution before Step 1 LOTO

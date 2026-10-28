@@ -266,12 +266,15 @@ export class ProceduralPartBuilder {
         [0, 0, -1],
         color
       )
+      const nx = c0 + c1
+      const ny = s0 + s1
+      const nLen = Math.sqrt(nx * nx + ny * ny) || 1
       this.addQuad(
         [cx + c0 * outerR, cy + s0 * outerR, zBack],
         [cx + c1 * outerR, cy + s1 * outerR, zBack],
         [cx + c1 * outerR, cy + s1 * outerR, zFront],
         [cx + c0 * outerR, cy + s0 * outerR, zFront],
-        [(c0 + c1) * 0.5, (s0 + s1) * 0.5, 0],
+        [nx / nLen, ny / nLen, 0],
         color
       )
     }
@@ -296,6 +299,9 @@ export class ProceduralPartBuilder {
       const s0 = Math.sin(a0)
       const c1 = Math.cos(a1)
       const s1 = Math.sin(a1)
+      const nx = c0 + c1
+      const nz = s0 + s1
+      const nLen = Math.sqrt(nx * nx + nz * nz) || 1
 
       this.addQuad(
         [cx + c0 * innerR, yTop, cz + s0 * innerR],
@@ -311,6 +317,14 @@ export class ProceduralPartBuilder {
         [cx + c1 * innerR, yBot, cz + s1 * innerR],
         [cx + c0 * innerR, yBot, cz + s0 * innerR],
         [0, -1, 0],
+        color
+      )
+      this.addQuad(
+        [cx + c0 * outerR, yBot, cz + s0 * outerR],
+        [cx + c0 * outerR, yTop, cz + s0 * outerR],
+        [cx + c1 * outerR, yTop, cz + s1 * outerR],
+        [cx + c1 * outerR, yBot, cz + s1 * outerR],
+        [nx / nLen, 0, nz / nLen],
         color
       )
     }
@@ -362,8 +376,8 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   // 1. 3D floating target action chevron that hovers over the next trace or repair target component
   private activeTargetChevronObj: SceneObject | null = null
   private activeTargetChevronVisual: RenderMeshVisual | null = null
-  private targetChevronPos: vec3 = new vec3(-6.8, 5.5, 2.4)
-  private currentChevronPos: vec3 = new vec3(-6.8, 5.5, 2.4)
+  private targetChevronPos: vec3 = new vec3(6.8, 7.0, 2.0)
+  private currentChevronPos: vec3 = new vec3(6.8, 7.0, 2.0)
 
   // 2. 2-Zone Animated 3D Cryo-Coolant Flow Pulse Rings (0..2 Upstream, 3..5 Downstream)
   private coolantFlowRings: SceneObject[] = []
@@ -383,6 +397,13 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private currentPhase: DiagnosticPhase = "READY_TO_SCAN"
   private selectedHotspot: HotspotId = "relay"
   private activeStepTargetHotspot: HotspotId = "valve"
+  private nextTraceTarget: HotspotId | null = null
+  private tracedHotspots: Record<HotspotId, boolean> = {
+    valve: false,
+    regulator: false,
+    relay: false
+  }
+  private lastSnapshot: FieldFixUISnapshot | null = null
   private flowBottleneckStage: FlowBottleneckStage = "choked_142psi"
   private completedSteps: boolean[] = [false, false, false, false]
   private previousStep2Done: boolean = false
@@ -396,8 +417,8 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   private currentValveAngleDeg: number = 0
   private targetValveAngleDeg: number = 0
 
-  private currentGaugeAngleDeg: number = 48
-  private targetGaugeAngleDeg: number = 48
+  private currentGaugeAngleDeg: number = 0
+  private targetGaugeAngleDeg: number = 0
 
   private currentRelayLiftCm: number = 1.35
   private targetRelayLiftCm: number = 1.35
@@ -866,25 +887,70 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
   }
 
   public applySnapshot(snapshot: FieldFixUISnapshot): void {
+    this.lastSnapshot = snapshot
     this.currentPhase = snapshot.phase
     this.selectedHotspot = snapshot.selectedHotspot
     this.activeStepTargetHotspot = snapshot.currentStep.targetHotspot
+    this.nextTraceTarget = snapshot.nextTraceTarget
+    this.tracedHotspots = {
+      valve: snapshot.tracedHotspots.valve,
+      regulator: snapshot.tracedHotspots.regulator,
+      relay: snapshot.tracedHotspots.relay
+    }
     this.flowBottleneckStage = snapshot.flowBottleneckStage
+    const rawStep2Done = snapshot.completedSteps[1]
     const newCompleted = snapshot.comparisonFaultPreview
       ? [false, false, false, false]
       : [...snapshot.completedSteps]
 
-    // Trigger 3D upward vapor relief plume when Step 2 (Regulator Purge) transitions to completed
+    // Trigger 3D upward vapor relief plume ONLY when actual Step 2 transitions from incomplete to completed
     if (snapshot.phase === "READY_TO_SCAN") {
       this.purgePlumeTimer = 0
+      this.scanTimer = 0
+      this.pinchFlashTimers = { valve: 0, regulator: 0, relay: 0 }
       this.interlockFlashTimers = { valve: 0, regulator: 0, relay: 0 }
+      this.currentXrayBlend = 0
+      this.currentValveAngleDeg = 0
+      this.targetValveAngleDeg = 0
+      this.currentGaugeAngleDeg = 0
+      this.targetGaugeAngleDeg = 0
+      this.currentRelayLiftCm = 1.35
+      this.targetRelayLiftCm = 1.35
+      this.currentRelayRotationDeg = 0
+      this.targetRelayRotationDeg = 0
+      this.currentChevronPos = new vec3(6.8, 7.0, 2.0)
+      this.targetChevronPos = new vec3(6.8, 7.0, 2.0)
       if (this.regulatorPurgePlumeObj) {
         this.regulatorPurgePlumeObj.enabled = false
       }
-    } else if (newCompleted[1] && !this.previousStep2Done && !snapshot.comparisonFaultPreview) {
+      if (this.valveHotspotRoot) {
+        this.valveHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
+      }
+      if (this.regulatorHotspotRoot) {
+        this.regulatorHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
+      }
+      if (this.relayHotspotRoot) {
+        this.relayHotspotRoot.getTransform().setLocalScale(new vec3(1.0, 1.0, 1.0))
+      }
+      if (this.valveWheelPivot) {
+        this.valveWheelPivot.getTransform().setLocalPosition(new vec3(0, 0, 0.5))
+        this.valveWheelPivot.getTransform().setLocalRotation(quat.quatIdentity())
+      }
+      if (this.gaugeNeedlePivot) {
+        this.gaugeNeedlePivot.getTransform().setLocalPosition(new vec3(0, -0.2, 0.42))
+        this.gaugeNeedlePivot.getTransform().setLocalRotation(quat.quatIdentity())
+      }
+      if (this.relayCorePivot) {
+        this.relayCorePivot.getTransform().setLocalPosition(new vec3(0, 1.35, -1.2))
+        this.relayCorePivot.getTransform().setLocalRotation(quat.quatIdentity())
+      }
+      if (this.activeTargetChevronObj) {
+        this.activeTargetChevronObj.getTransform().setLocalPosition(new vec3(6.8, 7.0, 2.0))
+      }
+    } else if (rawStep2Done && !this.previousStep2Done && !snapshot.comparisonFaultPreview) {
       this.purgePlumeTimer = 1.8
     }
-    this.previousStep2Done = newCompleted[1]
+    this.previousStep2Done = rawStep2Done
     this.completedSteps = newCompleted
 
     this.coolantFlowPct = snapshot.coolantFlowPct
@@ -895,16 +961,26 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.interlockFlashTimers[snapshot.interlockFlashHotspot] = 0.95
     }
 
-    // Enable 3D X-Ray internal sub-assemblies when global X-Ray is on OR during SCANNING OR for the traced hotspot
-    const showAllXray = this.xrayMode || snapshot.phase === "SCANNING"
+    // Enable 3D X-Ray internal sub-assemblies during SCANNING OR only for components that have been inspected/traced
+    const isScanning = snapshot.phase === "SCANNING"
+    const valveRevealed =
+      snapshot.tracedHotspots.valve || snapshot.completedCount > 0 || snapshot.comparisonFaultPreview
+    const regRevealed =
+      snapshot.tracedHotspots.regulator || snapshot.completedCount > 0 || snapshot.comparisonFaultPreview
+    const relayRevealed =
+      snapshot.tracedHotspots.relay || snapshot.completedCount > 0 || snapshot.comparisonFaultPreview
+
     if (this.valveInternalObj) {
-      this.valveInternalObj.enabled = showAllXray || this.focusedXrayHotspot === "valve"
+      this.valveInternalObj.enabled =
+        isScanning || (valveRevealed && (this.xrayMode || this.focusedXrayHotspot === "valve"))
     }
     if (this.regulatorInternalObj) {
-      this.regulatorInternalObj.enabled = showAllXray || this.focusedXrayHotspot === "regulator"
+      this.regulatorInternalObj.enabled =
+        isScanning || (regRevealed && (this.xrayMode || this.focusedXrayHotspot === "regulator"))
     }
     if (this.relayInternalObj) {
-      this.relayInternalObj.enabled = showAllXray || this.focusedXrayHotspot === "relay"
+      this.relayInternalObj.enabled =
+        isScanning || (relayRevealed && (this.xrayMode || this.focusedXrayHotspot === "relay"))
     }
 
     if (snapshot.phase === "SCANNING") {
@@ -1034,11 +1110,15 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
 
   private updateHotspotHalos(snapshot: FieldFixUISnapshot): void {
     const pickHaloMesh = (id: HotspotId, isRepaired: boolean): RenderMesh | null => {
-      if (this.interlockFlashTimers[id] > 0 || snapshot.interlockFlashHotspot === id) {
+      if (this.interlockFlashTimers[id] > 0) {
         return this.haloMeshRed
       }
       if (!snapshot.comparisonFaultPreview && (snapshot.phase === "COMPLETED" || isRepaired)) {
         return this.haloMeshGreen
+      }
+      // When CV-101 is LOTO-isolated (Step 1 done, Step 4 not yet done), show cyan LOTO indicator instead of amber fault
+      if (!snapshot.comparisonFaultPreview && id === "valve" && this.completedSteps[0] && !this.completedSteps[3]) {
+        return this.haloMeshCyan
       }
       // During READY_TO_SCAN onboarding, keep TR-309 crimson (overheat symptom) and CV-101 / PR-204 amber (fault warnings)
       if (snapshot.phase === "READY_TO_SCAN" && !snapshot.comparisonFaultPreview) {
@@ -1099,20 +1179,32 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.currentXrayBlend = targetXray
     }
 
-    const valveXrayFactor =
-      this.currentPhase === "SCANNING" || this.selectedHotspot === "valve"
+    const anyCompleted =
+      this.completedSteps[0] ||
+      this.completedSteps[1] ||
+      this.completedSteps[2] ||
+      this.completedSteps[3]
+    const valveRevealed = this.currentPhase === "SCANNING" || this.tracedHotspots.valve || anyCompleted
+    const regRevealed = this.currentPhase === "SCANNING" || this.tracedHotspots.regulator || anyCompleted
+    const relayRevealed = this.currentPhase === "SCANNING" || this.tracedHotspots.relay || anyCompleted
+
+    const valveXrayFactor = !valveRevealed
+      ? 0.0
+      : this.currentPhase === "SCANNING" || this.selectedHotspot === "valve"
         ? this.currentXrayBlend
         : this.xrayMode
           ? this.currentXrayBlend * 0.36
           : 0.0
-    const regXrayFactor =
-      this.currentPhase === "SCANNING" || this.selectedHotspot === "regulator"
+    const regXrayFactor = !regRevealed
+      ? 0.0
+      : this.currentPhase === "SCANNING" || this.selectedHotspot === "regulator"
         ? this.currentXrayBlend
         : this.xrayMode
           ? this.currentXrayBlend * 0.36
           : 0.0
-    const relayXrayFactor =
-      this.currentPhase === "SCANNING" || this.selectedHotspot === "relay"
+    const relayXrayFactor = !relayRevealed
+      ? 0.0
+      : this.currentPhase === "SCANNING" || this.selectedHotspot === "relay"
         ? this.currentXrayBlend
         : this.xrayMode
           ? this.currentXrayBlend * 0.36
@@ -1362,8 +1454,14 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
       this.interlockFlashTimers[id] > 0 ? Math.abs(Math.sin(this.elapsedTime * 18.0)) * 0.34 : 0
     if (this.interlockFlashTimers[id] > 0) {
       this.interlockFlashTimers[id] = Math.max(0, this.interlockFlashTimers[id] - clampedDt)
+      if (this.interlockFlashTimers[id] === 0 && this.lastSnapshot) {
+        this.updateHotspotHalos(this.lastSnapshot)
+      }
     }
-    const isTarget = this.selectedHotspot === id || this.activeStepTargetHotspot === id
+    const isTarget =
+      this.selectedHotspot === id ||
+      this.activeStepTargetHotspot === id ||
+      this.nextTraceTarget === id
     const speed = isTarget ? 6.5 : 3.0
     const amp = isTarget ? 0.14 : 0.05
     const base = isTarget ? 1.10 : 0.96

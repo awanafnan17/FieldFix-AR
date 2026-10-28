@@ -41,6 +41,7 @@ export class FieldFixMain extends BaseScriptComponent {
 
   private stateMachine: FieldFixStateMachine = new FieldFixStateMachine()
   private scanCountdown: number = -1
+  private eventsBound: boolean = false
 
   public onAwake(): void {
     FieldFixMain._instance = this
@@ -57,7 +58,7 @@ export class FieldFixMain extends BaseScriptComponent {
 
     this.createEvent("UpdateEvent").bind((ev) => {
       if (this.scanCountdown > 0) {
-        this.scanCountdown -= ev.getDeltaTime()
+        this.scanCountdown -= Math.min(ev.getDeltaTime(), 0.05)
         if (this.scanCountdown <= 0) {
           this.scanCountdown = -1
           const snap = this.stateMachine.completeScan()
@@ -67,6 +68,12 @@ export class FieldFixMain extends BaseScriptComponent {
             `[FieldFixAR] ScanComplete | phase=${snap.phase} | hotspot=${snap.selectedHotspot} | step=${snap.currentStep.stepNumber}/${snap.totalSteps}`
           )
         }
+      }
+    })
+
+    this.createEvent("OnDestroyEvent").bind(() => {
+      if (FieldFixMain._instance === this) {
+        FieldFixMain._instance = null
       }
     })
   }
@@ -107,6 +114,8 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   private bindEvents(): void {
+    if (this.eventsBound) return
+    this.eventsBound = true
     if (this.diagnosticUI) {
       this.diagnosticUI.onScanRequested.add(() => {
         this.triggerScan()
@@ -149,8 +158,12 @@ export class FieldFixMain extends BaseScriptComponent {
    */
   public handle3DHotspotPinch(id: HotspotId): FieldFixUISnapshot {
     const current = this.stateMachine.getSnapshot()
+    if (current.phase === "SCANNING") {
+      return current
+    }
     if (
       (current.phase === "DIAGNOSING" || current.phase === "REPAIRING") &&
+      current.faultTraceComplete &&
       current.selectedHotspot === id &&
       current.currentStep.targetHotspot === id &&
       !current.isCurrentStepDone
@@ -164,12 +177,13 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public triggerScan(immediate: boolean = false): FieldFixUISnapshot {
-    if (this.stateMachine.phase === "SCANNING" && !immediate) {
+    const currentPhase = this.stateMachine.phase
+    if (currentPhase !== "READY_TO_SCAN" && !(currentPhase === "SCANNING" && immediate)) {
       return this.stateMachine.getSnapshot()
     }
-    this.audioController?.playScan()
     if (immediate || this.scanDurationSec <= 0.05) {
       this.scanCountdown = -1
+      this.audioController?.stopScan()
       const snap = this.stateMachine.completeScan()
       this.audioController?.playAlert()
       this.syncAll(snap)
@@ -177,6 +191,7 @@ export class FieldFixMain extends BaseScriptComponent {
       return snap
     }
 
+    this.audioController?.playScan()
     const scanningSnap = this.stateMachine.startScan()
     this.scanCountdown = this.scanDurationSec
     this.syncAll(scanningSnap)
@@ -185,7 +200,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public selectHotspot(id: HotspotId): FieldFixUISnapshot {
-    this.scanCountdown = -1
+    if (this.stateMachine.phase === "SCANNING") {
+      return this.stateMachine.getSnapshot()
+    }
     this.audioController?.playClick()
     const snap = this.stateMachine.selectHotspot(id)
     this.syncAll(snap)
@@ -196,7 +213,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public nextStep(): FieldFixUISnapshot {
-    this.scanCountdown = -1
+    if (this.stateMachine.phase === "SCANNING") {
+      return this.stateMachine.getSnapshot()
+    }
     this.audioController?.playClick()
     const snap = this.stateMachine.nextStep()
     this.syncAll(snap)
@@ -207,7 +226,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public prevStep(): FieldFixUISnapshot {
-    this.scanCountdown = -1
+    if (this.stateMachine.phase === "SCANNING") {
+      return this.stateMachine.getSnapshot()
+    }
     this.audioController?.playClick()
     const snap = this.stateMachine.prevStep()
     this.syncAll(snap)
@@ -218,7 +239,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public confirmCurrentStep(): FieldFixUISnapshot {
-    this.scanCountdown = -1
+    if (this.stateMachine.phase === "SCANNING") {
+      return this.stateMachine.getSnapshot()
+    }
     const result = this.stateMachine.confirmCurrentStep()
     if (result.interlockBlocked) {
       this.audioController?.playAlert()
@@ -243,6 +266,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public toggleXrayMode(): FieldFixUISnapshot {
+    if (this.stateMachine.phase === "SCANNING") {
+      return this.stateMachine.getSnapshot()
+    }
     this.audioController?.playClick()
     const snap = this.stateMachine.toggleXrayMode()
     this.syncAll(snap)
@@ -251,6 +277,9 @@ export class FieldFixMain extends BaseScriptComponent {
   }
 
   public toggleComparisonMode(): FieldFixUISnapshot {
+    if (this.stateMachine.phase === "SCANNING") {
+      return this.stateMachine.getSnapshot()
+    }
     this.audioController?.playClick()
     const snap = this.stateMachine.toggleComparisonMode()
     this.syncAll(snap)
@@ -262,6 +291,7 @@ export class FieldFixMain extends BaseScriptComponent {
 
   public resetExperience(): FieldFixUISnapshot {
     this.scanCountdown = -1
+    this.audioController?.stopScan()
     this.audioController?.playClick()
     const snap = this.stateMachine.reset()
     this.syncAll(snap)

@@ -28,7 +28,7 @@
 ### B. TECHNICAL IMPLEMENTATION (State Machine, SPECS APIs, Resource Hygiene)
 
 1. **State Machine Determinism (`FieldFixState.ts`):**
-   - `FieldFixStateStore` is a pure TypeScript state machine (`863` lines) with zero scene-graph coupling. All telemetry readouts (`temperatureC`, `pressurePsi`, `flowRatePct`, `flowBottleneckStage`, `activeFaultBadge`) derive from a single deterministic function `computeSimulatedTelemetry()`.
+   - `FieldFixStateMachine` is a pure TypeScript state machine (`909` lines) with zero scene-graph coupling. All telemetry readouts (`systemTempC`, `systemPressurePsi`, `coolantFlowPct`, `flowBottleneckStage`, `headerBadgeText`) derive from deterministic state getters.
 2. **Weakness Identified (State Edge Case on Standby 3D Hotspot Pinch — `FieldFixState.ts:384-422`):**
    - If a user in `READY_TO_SCAN` pinches `Hotspot_PressureRegulator` (`PR-204`) directly without clicking `SCAN EQUIPMENT TELEMETRY` first:
      1. Line `384` (`wasInStandby`) transitions `_phase` directly to `"DIAGNOSING"` and sets `_tracedHotspots.relay = true`.

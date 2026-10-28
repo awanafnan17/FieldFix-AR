@@ -40,32 +40,50 @@ export class FieldFixAudioController extends BaseScriptComponent {
     return audio
   }
 
-  private safePlay(player: AudioComponent | null): void {
+  private safePlay(player: AudioComponent | null, baseVolume: number = 0.8): void {
     if (!player || !player.audioTrack) return
     try {
+      player.volume = Math.max(0, Math.min(1, baseVolume * this.masterVolume))
+      if (player.isPlaying()) {
+        player.stop(false)
+      }
       player.play(1)
     } catch (e) {
       // Ignore audio device contention in headless preview runs
     }
   }
 
+  public stopScan(): void {
+    if (!this.scanPlayer) return
+    try {
+      if (this.scanPlayer.isPlaying()) {
+        this.scanPlayer.stop(false)
+      }
+    } catch (e) {
+      // Ignore audio device contention in headless preview runs
+    }
+  }
+
   public playClick(): void {
-    this.safePlay(this.clickPlayer)
+    this.safePlay(this.clickPlayer, 0.7)
   }
 
   public playScan(): void {
-    this.safePlay(this.scanPlayer)
+    this.safePlay(this.scanPlayer, 0.85)
   }
 
   public playAlert(): void {
-    this.safePlay(this.alertPlayer)
+    this.stopScan()
+    this.safePlay(this.alertPlayer, 0.8)
   }
 
   public playStepConfirm(): void {
-    this.safePlay(this.confirmPlayer)
+    this.stopScan()
+    this.safePlay(this.confirmPlayer, 0.85)
   }
 
   public playComplete(): void {
-    this.safePlay(this.completePlayer)
+    this.stopScan()
+    this.safePlay(this.completePlayer, 0.9)
   }
 }

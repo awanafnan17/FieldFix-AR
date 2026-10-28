@@ -310,6 +310,9 @@ export class FieldFixStateMachine {
   }
 
   public startScan(): FieldFixUISnapshot {
+    if (this._phase !== "READY_TO_SCAN") {
+      return this.getSnapshot()
+    }
     this._phase = "SCANNING"
     this._comparisonFaultPreview = false
     this._interlockFlashHotspot = null
@@ -322,6 +325,9 @@ export class FieldFixStateMachine {
   }
 
   public completeScan(): FieldFixUISnapshot {
+    if (this._phase !== "READY_TO_SCAN" && this._phase !== "SCANNING") {
+      return this.getSnapshot()
+    }
     this._phase = "DIAGNOSING"
     this._selectedHotspot = "relay"
     this._currentStepIndex = 0
@@ -340,7 +346,18 @@ export class FieldFixStateMachine {
     return this.getSnapshot()
   }
 
+  private computeTraineeGrade(): string {
+    if (this._safetyViolations === 0) return "A+ FLAWLESS LOTO"
+    if (this._safetyViolations === 1) return "B+ SAFETY REDIRECTED"
+    if (this._safetyViolations === 2) return "C LOTO REVIEW REQUIRED"
+    return "D UNSAFE PROCEDURE"
+  }
+
   public toggleXrayMode(): FieldFixUISnapshot {
+    if (this._phase === "SCANNING") {
+      return this.getSnapshot()
+    }
+    this._interlockFlashHotspot = null
     this._xrayMode = !this._xrayMode
     const comp = HOTSPOT_CATALOG[this._selectedHotspot]
     if (this._xrayMode) {
@@ -359,6 +376,16 @@ export class FieldFixStateMachine {
     if (this._phase === "SCANNING") {
       return this.getSnapshot()
     }
+    const anyStepDone = this._completedSteps.some((v) => v)
+    if (this._phase !== "COMPLETED" && !anyStepDone) {
+      this._comparisonFaultPreview = false
+      this._interlockFlashHotspot = null
+      this._activeFeedbackText =
+        "COMPARE LOCKED: Complete diagnosis and at least 1 repair step before comparing Before vs After states."
+      this._activeFeedbackSeverity = "warning"
+      return this.getSnapshot()
+    }
+    this._interlockFlashHotspot = null
     this._comparisonFaultPreview = !this._comparisonFaultPreview
     if (this._comparisonFaultPreview) {
       this._whatChangedSummary =
@@ -381,7 +408,10 @@ export class FieldFixStateMachine {
   }
 
   public selectHotspot(hotspotId: HotspotId): FieldFixUISnapshot {
-    const wasInStandby = this._phase === "READY_TO_SCAN" || this._phase === "SCANNING"
+    if (this._phase === "SCANNING") {
+      return this.getSnapshot()
+    }
+    const wasInStandby = this._phase === "READY_TO_SCAN"
     const hadTracedRelayBefore = this._tracedHotspots.relay
     this._selectedHotspot = hotspotId
     this._comparisonFaultPreview = false
@@ -443,22 +473,25 @@ export class FieldFixStateMachine {
       this._activeFeedbackSeverity = "nominal"
     } else if (skippedUpstreamOrder) {
       this._advisoryCount++
-      this._whatChangedSummary =
-        "TRACE ORDER INCOMPLETE: Inspect midstream component [PR-204] upstream from [TR-309] before diagnosing [CV-101]."
-      this._activeFeedbackText =
-        "TRACE GUIDANCE: Do not skip ahead! Follow the 3D chevron and pinch midstream component [PR-204] first."
+      if (hotspotId === "regulator") {
+        this._whatChangedSummary =
+          "SYMPTOM CONFIRMED [1/3]: TR-309 is overheating (118C). Pinch [PR-204] again to inspect its internal regulator state."
+        this._activeFeedbackText =
+          "TRACE [1/3]: TR-309 overheat localized -> Pinch [PR-204] again to inspect upstream regulator."
+      } else {
+        this._whatChangedSummary =
+          "TRACE ORDER INCOMPLETE: Inspect midstream component [PR-204] upstream from [TR-309] before diagnosing [CV-101]."
+        this._activeFeedbackText =
+          "TRACE GUIDANCE: Do not skip ahead! Follow the 3D chevron and pinch midstream component [PR-204] first."
+      }
       this._activeFeedbackSeverity = "warning"
-    } else if (firstIncomplete >= 0 && this._currentStepIndex > firstIncomplete) {
+    } else if (traceComplete && firstIncomplete >= 0 && this._currentStepIndex > firstIncomplete) {
       this._advisoryCount++
       this._whatChangedSummary = comp.causalTraceSummary
-      if (traceComplete) {
-        const reqStep = REPAIR_STEPS[firstIncomplete]
-        const reqComp = HOTSPOT_CATALOG[reqStep.targetHotspot]
-        this._activeFeedbackText =
-          `${comp.causalLinkHint} (LOTO RULE: Execute Step ${reqStep.stepNumber}/4 [${reqComp.subsystemCode}] first.)`
-      } else {
-        this._activeFeedbackText = comp.causalLinkHint
-      }
+      const reqStep = REPAIR_STEPS[firstIncomplete]
+      const reqComp = HOTSPOT_CATALOG[reqStep.targetHotspot]
+      this._activeFeedbackText =
+        `LOTO RULE: Complete Step ${reqStep.stepNumber}/4 [${reqComp.subsystemCode}] before actuating [${comp.subsystemCode}].`
       this._activeFeedbackSeverity = "warning"
     } else if (traceComplete && firstIncomplete === 0 && this._currentStepIndex === 0) {
       this._whatChangedSummary = comp.causalTraceSummary
@@ -474,26 +507,30 @@ export class FieldFixStateMachine {
   }
 
   public nextStep(): FieldFixUISnapshot {
+    if (this._phase === "SCANNING") {
+      return this.getSnapshot()
+    }
     this._comparisonFaultPreview = false
     this._interlockFlashHotspot = null
 
-    if (this._phase === "READY_TO_SCAN" || this._phase === "SCANNING") {
-      this.completeScan()
+    if (this._phase === "READY_TO_SCAN") {
+      this._activeFeedbackText =
+        "SCAN REQUIRED: Pinch [SCAN EQUIPMENT TELEMETRY] before navigating repair steps."
+      this._activeFeedbackSeverity = "warning"
+      return this.getSnapshot()
     }
+
+    if (this.computeFaultTraceCount() < 3 && this._phase === "DIAGNOSING") {
+      this._activeFeedbackText =
+        "TRACE INCOMPLETE: Inspect [TR-309] -> [PR-204] -> [CV-101] upstream before navigating repair steps."
+      this._activeFeedbackSeverity = "warning"
+      return this.getSnapshot()
+    }
+
     if (this._currentStepIndex < REPAIR_STEPS.length - 1) {
       this._currentStepIndex++
       this._selectedHotspot = REPAIR_STEPS[this._currentStepIndex].targetHotspot
-      if (this._selectedHotspot === "relay") {
-        this._tracedHotspots.relay = true
-      } else if (this._selectedHotspot === "regulator" && this._tracedHotspots.relay) {
-        this._tracedHotspots.regulator = true
-      } else if (
-        this._selectedHotspot === "valve" &&
-        this._tracedHotspots.relay &&
-        this._tracedHotspots.regulator
-      ) {
-        this._tracedHotspots.valve = true
-      }
+      this._whatChangedSummary = HOTSPOT_CATALOG[this._selectedHotspot].causalTraceSummary
     }
 
     const firstIncomplete = this.getFirstIncompleteStepIndex()
@@ -511,26 +548,30 @@ export class FieldFixStateMachine {
   }
 
   public prevStep(): FieldFixUISnapshot {
+    if (this._phase === "SCANNING") {
+      return this.getSnapshot()
+    }
     this._comparisonFaultPreview = false
     this._interlockFlashHotspot = null
 
-    if (this._phase === "READY_TO_SCAN" || this._phase === "SCANNING") {
-      this.completeScan()
+    if (this._phase === "READY_TO_SCAN") {
+      this._activeFeedbackText =
+        "SCAN REQUIRED: Pinch [SCAN EQUIPMENT TELEMETRY] before navigating repair steps."
+      this._activeFeedbackSeverity = "warning"
+      return this.getSnapshot()
     }
+
+    if (this.computeFaultTraceCount() < 3 && this._phase === "DIAGNOSING") {
+      this._activeFeedbackText =
+        "TRACE INCOMPLETE: Inspect [TR-309] -> [PR-204] -> [CV-101] upstream before navigating repair steps."
+      this._activeFeedbackSeverity = "warning"
+      return this.getSnapshot()
+    }
+
     if (this._currentStepIndex > 0) {
       this._currentStepIndex--
       this._selectedHotspot = REPAIR_STEPS[this._currentStepIndex].targetHotspot
-      if (this._selectedHotspot === "relay") {
-        this._tracedHotspots.relay = true
-      } else if (this._selectedHotspot === "regulator" && this._tracedHotspots.relay) {
-        this._tracedHotspots.regulator = true
-      } else if (
-        this._selectedHotspot === "valve" &&
-        this._tracedHotspots.relay &&
-        this._tracedHotspots.regulator
-      ) {
-        this._tracedHotspots.valve = true
-      }
+      this._whatChangedSummary = HOTSPOT_CATALOG[this._selectedHotspot].causalTraceSummary
     }
     if (this._phase !== "COMPLETED") {
       this._activeFeedbackText = `ACTIVE STEP: ${REPAIR_STEPS[this._currentStepIndex].title}`
@@ -545,7 +586,7 @@ export class FieldFixStateMachine {
     newlyCompletedAll: boolean
     interlockBlocked: boolean
   } {
-    if (this._phase === "COMPLETED") {
+    if (this._phase === "COMPLETED" || this._phase === "SCANNING") {
       return {
         snapshot: this.getSnapshot(),
         stepExecuted: -1,
@@ -554,8 +595,24 @@ export class FieldFixStateMachine {
       }
     }
 
-    if (this._phase === "READY_TO_SCAN" || this._phase === "SCANNING") {
-      this.completeScan()
+    if (this._phase === "READY_TO_SCAN") {
+      this._activeFeedbackText =
+        "SCAN REQUIRED: Pinch [SCAN EQUIPMENT TELEMETRY] to begin upstream fault diagnosis."
+      this._activeFeedbackSeverity = "warning"
+      return {
+        snapshot: this.getSnapshot(),
+        stepExecuted: -1,
+        newlyCompletedAll: false,
+        interlockBlocked: false
+      }
+    }
+
+    if (this.computeFaultTraceCount() < 3) {
+      const nextTarget = this.computeNextTraceTarget() || "regulator"
+      const nextCode = HOTSPOT_CATALOG[nextTarget].subsystemCode
+      this._activeFeedbackText =
+        `TRACE INCOMPLETE: Inspect upstream [${nextCode}] before executing repair steps.`
+      this._activeFeedbackSeverity = "warning"
       return {
         snapshot: this.getSnapshot(),
         stepExecuted: -1,
@@ -581,7 +638,7 @@ export class FieldFixStateMachine {
         `SAFETY INTERLOCK [LOTO VIOLATION]: ${blockedStep.interlockReason} Redirected to Step ${reqStep.stepNumber}/4 [${reqComp.subsystemCode}].`
       this._activeFeedbackSeverity = "critical"
 
-      // Auto-redirect trainee to the required prerequisite step (do not mark uninspected root cause as traced)
+      // Auto-redirect trainee to the required prerequisite step
       this._currentStepIndex = firstIncomplete
       this._selectedHotspot = reqStep.targetHotspot
       this._phase = "REPAIRING"
@@ -599,7 +656,6 @@ export class FieldFixStateMachine {
       if (firstIncomplete >= 0) {
         this._currentStepIndex = firstIncomplete
         this._selectedHotspot = REPAIR_STEPS[firstIncomplete].targetHotspot
-        this._tracedHotspots[this._selectedHotspot] = true
       }
       return {
         snapshot: this.getSnapshot(),
@@ -636,12 +692,7 @@ export class FieldFixStateMachine {
       this._phase = "COMPLETED"
       this._tracedHotspots = { valve: true, regulator: true, relay: true }
       const score = Math.max(60, 100 - this._safetyViolations * 15)
-      const gradeLabel =
-        this._safetyViolations === 0
-          ? "A+ FLAWLESS LOTO"
-          : this._safetyViolations === 1
-          ? "B+ SAFETY REDIRECTED"
-          : "B VERIFIED"
+      const gradeLabel = this.computeTraineeGrade()
       this._activeFeedbackText =
         `TRAINING SCORECARD: ${score}% (${gradeLabel}) | Violations: ${this._safetyViolations} | Pinch [COMPARE] to review.`
       this._activeFeedbackSeverity = "nominal"
@@ -815,12 +866,7 @@ export class FieldFixStateMachine {
     }
 
     const trainingScorePct = Math.max(60, 100 - this._safetyViolations * 15)
-    const traineeGrade =
-      this._safetyViolations === 0
-        ? "A+ FLAWLESS LOTO"
-        : this._safetyViolations === 1
-          ? "B+ SAFETY REDIRECTED"
-          : "B VERIFIED"
+    const traineeGrade = this.computeTraineeGrade()
 
     return {
       phase: this._phase,
