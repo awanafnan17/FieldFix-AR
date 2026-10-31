@@ -8,7 +8,7 @@
 
 > **"Don't fix where the alarm rings. Trace the fault to its source."**
 
-**FieldFix AR** is an interactive, hands-free industrial maintenance and reverse-causal fault-tracing **training simulation** designed for **Snap SPECS (`SPECS 27`)**. It trains industrial maintenance apprentices, HVAC/cryo-pump technicians, and field service engineers to diagnose upstream root causes and follow strict Lockout-Tagout (`LOTO`) safety ordering instead of blindly replacing the downstream part where an alarm rings.
+**FieldFix AR** is an interactive, hands-free reverse-causal industrial fault-tracing **training simulation prototype** designed for **Snap SPECS (`SPECS 27`)** for the thermal relay (`TR-309`) $\rightarrow$ pressure regulator (`PR-204`) $\rightarrow$ check valve (`CV-101`) loop. It trains field technicians, industrial maintenance trainees, and technical students to diagnose upstream root causes and follow procedural Lockout-Tagout (`LOTO`) safety ordering instead of blindly replacing the downstream part where an alarm rings.
 
 When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Relay Unit (`Unit #04`)**, FieldFix AR anchors a multi-part, articulated 3D equipment assembly on the left and a companion `SpectaclesUIKit` diagnostic and repair checklist on the right at workbench depth (`z = -110 cm`). Using far-field hand-pinch gestures (`SpectaclesInteractionKit`), the user can:
 
@@ -25,7 +25,7 @@ When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Rel
    - **`RelayInternalStatorCoil` (`TR-309`):** Internal copper stator windings & magnetic plunger latch (`118°C` tripped -> `46°C` reseated).
 
 3. **Experience Sequential Industrial LOTO Safety Interlock Enforcement:**
-   FieldFix AR enforces real industrial Lockout-Tagout (`LOTO`) safety ordering (`Step 1 -> Step 2 -> Step 3 -> Step 4`). If a trainee attempts an out-of-order repair (such as purging the `142 PSI` regulator `PR-204` or reseating the `118°C` relay `TR-309` before isolating `CV-101`), the **Sequential Safety Interlock** blocks execution, flashes a 3D red hazard halo with an audible alert (`FaultAlert.wav`), displays a corrective `SAFETY INTERLOCK [LOTO VIOLATION]` banner, and automatically redirects focus to the required prerequisite step (`CV-101`).
+   FieldFix AR models industrial Lockout-Tagout (`LOTO`) safety ordering in an educational simulation (`Step 1 -> Step 2 -> Step 3 -> Step 4`). If a trainee attempts an out-of-order repair (such as purging the `142 PSI` regulator `PR-204` or reseating the `118°C` relay `TR-309` before isolating `CV-101`), the **Sequential Safety Interlock** blocks execution, flashes a 3D red hazard halo with an audible alert (`FaultAlert.wav`), displays a corrective `SAFETY INTERLOCK [LOTO VIOLATION]` banner, deducts 15% from the competency scorecard, and automatically redirects focus to the required prerequisite step (`CV-101`).
 
 4. **Pinch 3D Component Hotspots Directly on the Equipment to Focus & Execute Repairs** (or use the companion UIKit HUD buttons):
    - A 3D bobbing pointer chevron (`ActiveStepTargetChevron`) hovers directly above the active trace or repair target 3D component (`CV-101`, `PR-204`, or `TR-309`).
@@ -38,7 +38,7 @@ When a trainee or technician steps up to the simulated **Cryo-Coolant Pump & Rel
 5. **Toggle Before / After Spatial Comparison Mode (`COMPARE BEFORE/AFTER`), Navigate & Replay:**
    After completing all 4 steps, trainees can pinch `COMPARE BEFORE/AFTER` to dynamically animate the 3D machine, valve lever, gauge needle, relay core, flow rings, and telemetry between `FAULT (BEFORE)` (`118°C / 142 PSI / 18% Flow`) and `NOMINAL (AFTER)` (`42°C / 45 PSI / 100% Flow`) without losing completion state, step backward/forward (`< PREV STEP`, `NEXT STEP >`), or reset the simulation (`RESET UNIT`).
 
-> **Simulation Notice:** FieldFix AR is an educational maintenance training simulation. All temperature, pressure, and coolant-flow readings are simulated in software, and the Lockout-Tagout (`LOTO`) step demonstrates procedural sequence guidance and interlock enforcement rather than establishing physical isolation on live industrial equipment.
+> **Educational Simulation Prototype Notice:** FieldFix AR is an educational training simulation prototype. All temperature, pressure, and coolant-flow readings are simulated in software. The Lockout-Tagout (`LOTO`) step demonstrates procedural sequence guidance and safety interlock enforcement rather than establishing physical isolation on live industrial equipment. FieldFix AR does not confer certified OSHA safety compliance or industrial deployment readiness.
 
 ---
 
@@ -61,7 +61,7 @@ FieldFix-AR/
 ├── LICENSE                               # MIT License (with Third-Party Snap Package notices)
 ├── README.md                             # Project documentation & setup instructions
 ├── devpost/
-│   ├── FieldFix-AR-Demo-V5-TraceTheFault.mp4 # 111.53s (1:51.5) V5 "TRACE THE FAULT" verified demo video
+│   ├── FieldFix-AR-Demo-V5-TraceTheFault.mp4 # 119.70s (01:59.70) V5 "TRACE THE FAULT" verified demo video
 │   ├── FieldFix-AR-Demo.mp4              # Preserved V4 approved demo video
 │   ├── JUDGE_RESEARCH.md                 # Epistemically labeled [1]-[4] judge & competition analysis
 │   ├── COMPETITIVE_LANDSCAPE.md          # SPECS ecosystem, academic HCI & enterprise AR benchmark
@@ -72,7 +72,7 @@ FieldFix-AR/
 │   ├── design-brief.md                   # Official plan-lens AR design brief (status: approved)
 │   ├── SUBMISSION.md                     # Ready-to-paste Devpost & video submission copy
 │   ├── COMPLIANCE_CHECKLIST.md           # Competition rule, accuracy & security audit checklist
-│   ├── VERIFICATION_REPORT.md            # Real SIK PreviewInteractTool, 5/5 LEAF & V4 vs V5 critique report
+│   ├── VERIFICATION_REPORT.md            # Real SIK PreviewInteractTool, LEAF & V4 vs V5 critique report
 │   └── screenshots/                      # Synchronized V5 runtime preview & editor PNG captures
 ├── Assets/
 │   ├── Scripts/
