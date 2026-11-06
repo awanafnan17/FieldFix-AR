@@ -678,7 +678,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.valveHotspotRoot = this.createHotspotContainer(
       "Hotspot_CoolantValve",
       new vec3(-6.8, 1.2, 2.4),
-      new vec3(5.2, 5.2, 7.0),
+      new vec3(4.2, 4.2, 4.5),
       "valve"
     )
 
@@ -737,7 +737,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.regulatorHotspotRoot = this.createHotspotContainer(
       "Hotspot_PressureRegulator",
       new vec3(0, 5.8, 1.8),
-      new vec3(5.2, 5.2, 7.0),
+      new vec3(4.2, 4.2, 4.5),
       "regulator"
     )
 
@@ -793,7 +793,7 @@ export class FieldFixEquipmentMesh extends BaseScriptComponent {
     this.relayHotspotRoot = this.createHotspotContainer(
       "Hotspot_ThermalRelayCore",
       new vec3(6.8, 1.4, 2.0),
-      new vec3(5.4, 5.6, 7.0),
+      new vec3(4.2, 4.2, 4.5),
       "relay"
     )
 
