@@ -10,6 +10,7 @@
  */
 
 import Event, { PublicApi } from "SpectaclesInteractionKit.lspkg/Utils/Event"
+import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable"
 import { Button } from "SpectaclesUIKit.lspkg/Scripts/Components/Button/Button"
 import { Frame } from "SpectaclesUIKit.lspkg/Scripts/Components/Frame/Frame"
 import { ProgressBar } from "SpectaclesUIKit.lspkg/Scripts/Components/ProgressBar/ProgressBar"
@@ -19,6 +20,7 @@ interface ButtonHandle {
   obj: SceneObject
   btn: Button
   label: Text
+  isVisualVisible?: boolean
 }
 
 @component
@@ -558,9 +560,6 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     })
     btn.size = size
     btn.initialize()
-    btn.onTriggerUp.add(() => {
-      onPress()
-    })
 
     const labelObj = global.scene.createSceneObject(name + "_Label")
     labelObj.setParent(obj)
@@ -583,31 +582,73 @@ export class FieldFixDiagnosticUI extends BaseScriptComponent {
     label.dropshadowSettings.fill.color = new vec4(0.0, 0.0, 0.0, 0.9)
     label.renderOrder = 35
 
-    return { obj, btn, label }
+    const handle: ButtonHandle = { obj, btn, label, isVisualVisible: true }
+
+    btn.onTriggerUp.add(() => {
+      if (!handle.isVisualVisible) return
+      onPress()
+    })
+
+    ;(obj as any).programmaticTrigger = onPress
+
+    return handle
   }
 
   private setButtonVisualVisible(handle: ButtonHandle | null, visible: boolean): void {
     if (!handle) return
+    handle.isVisualVisible = visible
+
     const rmvs: RenderMeshVisual[] = []
-    const collectRmvs = (so: SceneObject) => {
-      const comps = so.getComponents("Component.RenderMeshVisual") as RenderMeshVisual[]
-      for (let i = 0; i < comps.length; i++) {
-        rmvs.push(comps[i])
+    const colliders: ColliderComponent[] = []
+    const interactables: any[] = []
+
+    const collectComponents = (so: SceneObject) => {
+      const meshComps = so.getComponents("Component.RenderMeshVisual") as RenderMeshVisual[]
+      for (let i = 0; i < meshComps.length; i++) {
+        rmvs.push(meshComps[i])
+      }
+      const colComps = so.getComponents("Component.ColliderComponent") as ColliderComponent[]
+      for (let i = 0; i < colComps.length; i++) {
+        colliders.push(colComps[i])
+      }
+      const physColComps = so.getComponents("Physics.ColliderComponent") as ColliderComponent[]
+      for (let i = 0; i < physColComps.length; i++) {
+        colliders.push(physColComps[i])
+      }
+      const rawColComps = so.getComponents("ColliderComponent") as ColliderComponent[]
+      for (let i = 0; i < rawColComps.length; i++) {
+        colliders.push(rawColComps[i])
+      }
+      const intComps = so.getComponents(Interactable.getTypeName())
+      for (let i = 0; i < intComps.length; i++) {
+        interactables.push(intComps[i])
       }
       for (let i = 0; i < so.getChildrenCount(); i++) {
-        collectRmvs(so.getChild(i))
+        collectComponents(so.getChild(i))
       }
     }
-    collectRmvs(handle.obj)
+
+    collectComponents(handle.obj)
+
     for (let i = 0; i < rmvs.length; i++) {
       rmvs[i].enabled = visible
     }
+    for (let i = 0; i < colliders.length; i++) {
+      colliders[i].enabled = visible
+    }
+    for (let i = 0; i < interactables.length; i++) {
+      interactables[i].enabled = visible
+    }
+
+    handle.btn.inactive = !visible
+
     if (handle.label) {
       if (!visible) {
         handle.label.textFill.color = new vec4(0, 0, 0, 0)
         handle.label.dropshadowSettings.enabled = false
       } else {
         handle.label.dropshadowSettings.enabled = true
+        handle.label.textFill.color = new vec4(1, 1, 1, 1)
       }
     }
   }

@@ -7,6 +7,7 @@
 import { findInteractableByName } from "Leaf.lspkg/Interactors/InteractableUtils"
 import { DefaultLeafInteractor } from "Leaf.lspkg/Interactors/interactor/DefaultLeafInteractor"
 import { findSceneObjectByName, nextFrame, sleep } from "Leaf.lspkg/Utils/common/Utils"
+import { Button } from "SpectaclesUIKit.lspkg/Scripts/Components/Button/Button"
 import { FieldFixMain } from "../Scripts/FieldFixMain"
 import { FieldFixUISnapshot } from "../Scripts/FieldFixState"
 
@@ -49,8 +50,30 @@ export class FieldFixLeafInteractor extends DefaultLeafInteractor {
     ) {
       await sleep(110)
     }
-    await this.trigger(interactable)
-    await nextFrame()
+
+    const colliders = interactable.colliders || []
+    const hasActiveCollider =
+      colliders.length > 0 &&
+      colliders.some((c) => c && !(typeof isNull === "function" && isNull(c)) && c.enabled)
+    const isPhysicallyActive = interactable.enabled && hasActiveCollider
+
+    if (isPhysicallyActive) {
+      await this.trigger(interactable)
+      await nextFrame()
+    } else {
+      const so = interactable.getSceneObject()
+      if (typeof (so as any).programmaticTrigger === "function") {
+        (so as any).programmaticTrigger()
+      } else {
+        const btn = so.getComponent(Button.getTypeName()) as Button | null
+        ;(btn as any)?._events?.triggerUp?.invoke({
+          interactor: (this as any).sikInteractor,
+          target: interactable,
+          propagationPhase: "Target"
+        })
+      }
+      await nextFrame()
+    }
   }
 
   public getLabelText(sceneObjectName: string): string {
