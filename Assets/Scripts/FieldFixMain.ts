@@ -1,3 +1,4 @@
+// Timestamp: 1794071553.516151
 /**
  * FieldFixMain.ts
  * Main coordinator for FieldFix AR — Spatial Equipment Diagnostic & Guided Repair Assistant.
@@ -39,6 +40,12 @@ export class FieldFixMain extends BaseScriptComponent {
   @hint("Duration of the laser telemetry scan sweep in seconds")
   public scanDurationSec: number = 1.2
 
+  @input
+  public autoPacedShowcase: boolean = true
+  private showcaseTime: number = 0
+  private showcaseStep: number = 0
+  private showcaseActive: boolean = true
+
   private stateMachine: FieldFixStateMachine = new FieldFixStateMachine()
   private scanCountdown: number = -1
   private eventsBound: boolean = false
@@ -72,8 +79,9 @@ export class FieldFixMain extends BaseScriptComponent {
     })
 
     this.createEvent("UpdateEvent").bind((ev) => {
+      const dt = Math.min(ev.getDeltaTime(), 0.05)
       if (this.scanCountdown > 0) {
-        this.scanCountdown -= Math.min(ev.getDeltaTime(), 0.05)
+        this.scanCountdown -= dt
         if (this.scanCountdown <= 0) {
           this.scanCountdown = -1
           const snap = this.stateMachine.completeScan()
@@ -83,6 +91,11 @@ export class FieldFixMain extends BaseScriptComponent {
             `[FieldFixAR] ScanComplete | phase=${snap.phase} | hotspot=${snap.selectedHotspot} | step=${snap.currentStep.stepNumber}/${snap.totalSteps}`
           )
         }
+      }
+
+      if (this.autoPacedShowcase && this.showcaseActive) {
+        this.showcaseTime += dt
+        this.tickShowcase()
       }
     })
 
@@ -344,7 +357,10 @@ export class FieldFixMain extends BaseScriptComponent {
     return snap
   }
 
-  public resetExperience(): FieldFixUISnapshot {
+  public resetExperience(preserveShowcase: boolean = false): FieldFixUISnapshot {
+    if (!preserveShowcase) {
+      this.showcaseActive = false
+    }
     this.scanCountdown = -1
     this.lastConfirmStepTimeSec = -10
     this.stepExplicitlyTargeted = true
@@ -358,6 +374,143 @@ export class FieldFixMain extends BaseScriptComponent {
       `[FieldFixAR] Reset | phase=${snap.phase} | completed=${snap.completedCount}/${snap.totalSteps}`
     )
     return snap
+  }
+
+  public restartShowcase(): void {
+    this.showcaseTime = 0
+    this.showcaseStep = 0
+    this.showcaseActive = true
+    this.resetExperience(true)
+    print("[Showcase] Restarted continuous journey from t=0.0s")
+  }
+
+  private tickShowcase(): void {
+    if (!this.showcaseActive) return
+
+    // Step 1: Trigger Scan at t = 3.5s (Laser sweep 1.2s -> DIAGNOSING at t=4.7s)
+    if (this.showcaseStep === 0 && this.showcaseTime >= 3.5) {
+      this.showcaseStep = 1
+      print("[Showcase] t=3.5s: Triggering Telemetry Scan...")
+      this.triggerScan()
+    }
+    // Step 2: Early skip guard check on CV-101 at t = 8.5s
+    else if (this.showcaseStep === 1 && this.showcaseTime >= 8.5) {
+      this.showcaseStep = 2
+      print("[Showcase] t=8.5s: Trainee attempts early pinch on CV-101 (Skip Guard)...")
+      this.selectHotspot("valve")
+    }
+    // Step 3: Upstream Trace 2/3 on PR-204 at t = 12.0s (Auto-X-Ray & 142 PSI Bottleneck)
+    else if (this.showcaseStep === 2 && this.showcaseTime >= 12.0) {
+      this.showcaseStep = 3
+      print("[Showcase] t=12.0s: Trainee traces PR-204 (Auto-X-Ray & 142 PSI Bottleneck)...")
+      this.selectHotspot("regulator")
+    }
+    // Step 4: Upstream Trace 3/3 on CV-101 at t = 17.5s (18% Flow Root Cause Discovered)
+    else if (this.showcaseStep === 3 && this.showcaseTime >= 17.5) {
+      this.showcaseStep = 4
+      print("[Showcase] t=17.5s: Trainee traces CV-101 (18% Flow Root Cause Discovered)...")
+      this.selectHotspot("valve")
+    }
+    // Step 5: Unsafe Out-of-Order Action on PR-204 (LOTO Safety Interlock) at t = 23.0s
+    else if (this.showcaseStep === 4 && this.showcaseTime >= 23.0) {
+      this.showcaseStep = 5
+      print("[Showcase] t=23.0s: Trainee attempts out-of-order PR-204 purge (LOTO Interlock Block)...")
+      this.selectHotspot("regulator")
+      this.confirmCurrentStep()
+    }
+    // Step 6: Correct Step 1: Isolate CV-101 Valve at t = 28.5s
+    else if (this.showcaseStep === 5 && this.showcaseTime >= 28.5) {
+      this.showcaseStep = 6
+      print("[Showcase] t=28.5s: Step 1: Isolate CV-101 Valve (LOTO Lock Snap)...")
+      this.selectHotspot("valve")
+      this.confirmCurrentStep()
+    }
+    // Step 7: Correct Step 2: Purge PR-204 Regulator at t = 34.5s
+    else if (this.showcaseStep === 6 && this.showcaseTime >= 34.5) {
+      this.showcaseStep = 7
+      print("[Showcase] t=34.5s: Step 2: Purge PR-204 Regulator (Plume Burst & 38 PSI)...")
+      this.selectHotspot("regulator")
+      this.confirmCurrentStep()
+    }
+    // Step 8: Correct Step 3: Reseat TR-309 Relay Core at t = 40.5s
+    else if (this.showcaseStep === 7 && this.showcaseTime >= 40.5) {
+      this.showcaseStep = 8
+      print("[Showcase] t=40.5s: Step 3: Reseat TR-309 Relay (Plunger Retract & Cool 46C)...")
+      this.selectHotspot("relay")
+      this.confirmCurrentStep()
+    }
+    // Step 9: Correct Step 4: Restore CV-101 Coolant Flow at t = 46.5s
+    else if (this.showcaseStep === 8 && this.showcaseTime >= 46.5) {
+      this.showcaseStep = 9
+      print("[Showcase] t=46.5s: Step 4: Remove LOTO & Open CV-101 (100% Flow & 85% Scorecard)...")
+      this.selectHotspot("valve")
+      this.confirmCurrentStep()
+    }
+    // Step 10: Reset Unit at t = 53.0s
+    else if (this.showcaseStep === 9 && this.showcaseTime >= 53.0) {
+      this.showcaseStep = 10
+      print("[Showcase] t=53.0s: Reset Unit to Standby...")
+      this.resetExperience(true)
+    }
+    // Step 11: Run 2 Clean Scan at t = 54.5s
+    else if (this.showcaseStep === 10 && this.showcaseTime >= 54.5) {
+      this.showcaseStep = 11
+      print("[Showcase] t=54.5s: Run 2 Clean Scan...")
+      this.triggerScan(true)
+    }
+    // Step 12: Run 2 Trace PR-204 at t = 56.0s
+    else if (this.showcaseStep === 11 && this.showcaseTime >= 56.0) {
+      this.showcaseStep = 12
+      this.selectHotspot("regulator")
+    }
+    // Step 13: Run 2 Trace CV-101 at t = 57.5s
+    else if (this.showcaseStep === 12 && this.showcaseTime >= 57.5) {
+      this.showcaseStep = 13
+      this.selectHotspot("valve")
+    }
+    // Step 14: Run 2 Step 1 at t = 59.0s
+    else if (this.showcaseStep === 13 && this.showcaseTime >= 59.0) {
+      this.showcaseStep = 14
+      this.selectHotspot("valve")
+      this.confirmCurrentStep()
+    }
+    // Step 15: Run 2 Step 2 at t = 60.5s
+    else if (this.showcaseStep === 14 && this.showcaseTime >= 60.5) {
+      this.showcaseStep = 15
+      this.selectHotspot("regulator")
+      this.confirmCurrentStep()
+    }
+    // Step 16: Run 2 Step 3 at t = 62.0s
+    else if (this.showcaseStep === 15 && this.showcaseTime >= 62.0) {
+      this.showcaseStep = 16
+      this.selectHotspot("relay")
+      this.confirmCurrentStep()
+    }
+    // Step 17: Run 2 Step 4 at t = 63.5s (100% Scorecard)
+    else if (this.showcaseStep === 16 && this.showcaseTime >= 63.5) {
+      this.showcaseStep = 17
+      print("[Showcase] t=63.5s: Run 2 Step 4 Complete (100% Scorecard)...")
+      this.selectHotspot("valve")
+      this.confirmCurrentStep()
+    }
+    // Step 18: Toggle Compare Mode (Fault Snapshot) at t = 66.5s
+    else if (this.showcaseStep === 17 && this.showcaseTime >= 66.5) {
+      this.showcaseStep = 18
+      print("[Showcase] t=66.5s: Toggle Compare Mode (Fault Snapshot)...")
+      this.toggleComparisonMode()
+    }
+    // Step 19: Toggle Compare Mode (Nominal State) at t = 69.5s
+    else if (this.showcaseStep === 18 && this.showcaseTime >= 69.5) {
+      this.showcaseStep = 19
+      print("[Showcase] t=69.5s: Toggle Compare Mode (Nominal State)...")
+      this.toggleComparisonMode()
+    }
+    // Step 20: Done at t = 72.0s
+    else if (this.showcaseStep === 19 && this.showcaseTime >= 72.0) {
+      this.showcaseStep = 20
+      this.showcaseActive = false
+      print("[Showcase] Continuous Journey Complete at t=72.0s!")
+    }
   }
 
   public getSnapshot(): FieldFixUISnapshot {

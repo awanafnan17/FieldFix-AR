@@ -29,6 +29,7 @@
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
     audioController: false
+    autoPacedShowcase: false
     diagnosticUI: false
     equipmentMesh: false
     scanDurationSec: false
@@ -45,6 +46,7 @@
       diagnosticUI: !<MappingBased.AssignableType_2> 00000000-0000-0000-0000-000000000000
       audioController: !<MappingBased.AssignableType_3> 00000000-0000-0000-0000-000000000000
       scanDurationSec: 0.750000
+      autoPacedShowcase: true
   ScriptTypes:
     -
       {}
@@ -53,3 +55,4 @@
     - '// @input AssignableType_2 diagnosticUI {"hint":"World-space SpectaclesUIKit diagnostic & repair UI panel"}'
     - '// @input AssignableType_3 audioController {"hint":"Spatial audio feedback controller"}'
     - '// @input float scanDurationSec = 1.2 {"hint":"Duration of the laser telemetry scan sweep in seconds"}'
+    - // @input bool autoPacedShowcase = true

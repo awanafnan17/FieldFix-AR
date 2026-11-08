@@ -56,3 +56,12 @@ ls-live-instance.json.tmp
 
 __pycache__/
 *.py[cod]
+
+# Publication & Release Hygiene
+.agents/
+*.zip
+*.pem
+*.key
+.env*
+# Quarantine rejected candidate video (preserve on disk, exclude from Git release)
+devpost/FieldFix-AR-Demo-V6-JudgesEdition.mp4
